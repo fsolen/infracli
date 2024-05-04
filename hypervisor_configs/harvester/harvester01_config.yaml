@@ -1,2 +1,2 @@
-harvester_api_url = "https://harvester01.fatihsolen.local"
-harvester_api_token = "**TOKEN**"
+harvester_api_url: https://harvester01.fatihsolen.local
+harvester_api_token: **TOKEN**
