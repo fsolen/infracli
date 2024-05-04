@@ -1,2 +1,2 @@
 # infracli
-Powerful automation CLI for daily operations for VMware / Suse Harvester / Pure Storage / Longhorn
+Powerful automation CLI for daily operations VMware / Suse Harvester / Pure Storage / Longhorn
