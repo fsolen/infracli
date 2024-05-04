@@ -430,7 +430,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    vcenter_config_file = "vcenter_config.yaml"
+    vcenter_config_file = "hypervisor_configs/vmware/vcenter01_config.yaml"
     profiles_path = "vm_profiles"
 
     vcenter_connector = vCenterConnector(vcenter_config_file)
