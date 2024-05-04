@@ -1,0 +1,2 @@
+HARVESTER_API_URL = "https://harvester01.fatihsolen.local"
+HARVESTER_API_TOKEN = "**TOKEN**"
