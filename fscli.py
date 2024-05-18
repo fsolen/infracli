@@ -276,6 +276,109 @@ class VMManager:
             if network.name == network_name:
                 return network
         return None
+    
+    def modify_network_adapters(self, vm, profile):
+    # Get the network settings from the profile
+    net_settings = profile.get('net', [])
+
+    # Get the network adapters from the VM
+    network_adapters = [device for device in vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualEthernetCard)]
+
+    # Iterate over the network settings
+    for i, net_setting in enumerate(net_settings):
+        # Check if the network adapter already exists
+        if i < len(network_adapters):
+            # Check if the existing network adapter is not VMXNET3
+            if not isinstance(network_adapters[i], vim.vm.device.VirtualVmxnet3):
+                # Remove the existing network adapter
+                device_change = vim.vm.device.VirtualDeviceSpec()
+                device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.remove
+                device_change.device = network_adapters[i]
+                vm.config.hardware.device.append(device_change)
+
+                # Add a new VMXNET3 network adapter
+                new_network_adapter = vim.vm.device.VirtualVmxnet3()
+                new_network_adapter.backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
+                new_network_adapter.backing.deviceName = net_setting
+                new_network_adapter.addressType = 'assigned'
+                new_network_adapter.key = -1
+                new_network_adapter.deviceInfo.summary = 'VMXNET3'
+
+                # Add the new network adapter to the VM configuration
+                device_change = vim.vm.device.VirtualDeviceSpec()
+                device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+                device_change.device = new_network_adapter
+                vm.config.hardware.device.append(device_change)
+            else:
+                # Update the existing VMXNET3 network adapter
+                network_adapters[i].backing.deviceName = net_setting
+        else:
+            # Add a new VMXNET3 network adapter
+            new_network_adapter = vim.vm.device.VirtualVmxnet3()
+            new_network_adapter.backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
+            new_network_adapter.backing.deviceName = net_setting
+            new_network_adapter.addressType = 'assigned'
+            new_network_adapter.key = -1
+            new_network_adapter.deviceInfo.summary = 'VMXNET3'
+
+            # Add the new network adapter to the VM configuration
+            device_change = vim.vm.device.VirtualDeviceSpec()
+            device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+            device_change.device = new_network_adapter
+            vm.config.hardware.device.append(device_change)
+                        
+    def modify_disks(self, vm, profile):
+    # Get the disk configurations from the profile
+    disk_configs = profile.get('disks', [])
+
+    # Get the disks from the VM
+    disks = [device for device in vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualDisk)]
+
+    # Iterate over the disk configurations
+    for disk_config in disk_configs:
+        # Check if the disk configuration exists in the VM
+        disk_found = False
+        for disk in disks:
+            if disk.deviceInfo.label == disk_config.get('name'):
+                disk_found = True
+                break
+
+        # If the disk configuration is not found, add it to the VM
+        if not disk_found:
+            print("You specified in the profile '{}', but the VM does not have a disk named '{}'.".format(disk_config.get('name'), disk_config.get('name')))\
+            print("Adding disk '{}' with size {} GB to the VM.".format(disk_config.get('name'), disk_config.get('size_gb')))\
+
+            # Create a new disk device
+            new_disk = vim.vm.device.VirtualDisk()
+            new_disk.key = -1
+            new_disk.controllerKey = 0
+            new_disk.unitNumber = len(vm.config.hardware.device)
+            new_disk.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+            new_disk.backing.diskMode = 'persistent'
+            new_disk.backing.fileName = ''
+            new_disk.capacityInKB = disk_config.get('size_gb') * 1024 * 1024
+
+            # Add the new disk to the VM configuration
+            device_change = vim.vm.device.VirtualDeviceSpec()
+            device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+            device_change.device = new_disk
+            vm.config.hardware.device.append(device_change)
+
+        # If the disk configuration exists in the VM, update it
+        else:
+            # Find the disk in the VM configuration
+            for disk in vm.config.hardware.device:
+                if isinstance(disk, vim.vm.device.VirtualDisk) and disk.deviceInfo.label == disk_config.get('name'):
+                    # Update the disk configuration
+                    disk.capacityInKB = disk_config.get('size_gb') * 1024 * 1024
+
+                    # Create a device change specification
+                    device_change = vim.vm.device.VirtualDeviceSpec()
+                    device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
+                    device_change.device = disk
+
+                    # Add the device change to the VM configuration
+                    vm.config.spec.deviceChange.append(device_change)
 
     def modify_vm(self, vm_name, profile_name):
         try:
@@ -311,81 +414,10 @@ class VMManager:
             spec.memoryMB = profile.get('memory', vm.config.hardware.memoryMB)
             
             # Update disk configurations from the profile
-            spec.deviceChange = []
-            for disk_spec in profile.get('disks', []):
-                disk_name = disk_spec.get('name')
-                disk_size_gb = disk_spec.get('size_gb')
-                disk_found = False
-            
-                # Check if the disk specified in the profile exists in the VM's configuration
-                for device in vm.config.hardware.device:
-                    if isinstance(device, vim.vm.device.VirtualDisk) and device.deviceInfo.label == disk_name:
-                        disk_found = True
-            
-                        # Modify the existing disk configuration
-                        disk_change_spec = vim.vm.device.VirtualDeviceSpec()
-                        disk_change_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
-                        disk_change_spec.device = device
-                        disk_change_spec.device.capacityInKB = disk_size_gb * 1024 * 1024
-                        spec.deviceChange.append(disk_change_spec)
-                        break
-            
-                # If the disk specified in the profile is not found, add it to the VM's configuration
-                if not disk_found:
-                    print("You specified in the profile '{}', but the VM does not have a disk named '{}'.".format(disk_name, disk_name))
-                    print("Adding disk '{}' with size {} GB to the VM.".format(disk_name, disk_size_gb))
-            
-                    # Create a new disk device
-                    new_disk = vim.vm.device.VirtualDisk()
-                    new_disk.capacityInKB = disk_size_gb * 1024 * 1024
-            
-                    # Find or create a SCSI controller
-                    controller = None
-                    for device in vm.config.hardware.device:
-                        if isinstance(device, vim.vm.device.VirtualSCSIController):
-                            controller = device
-                            break
-            
-                    if not controller:
-                        # Create a new SCSI controller
-                        controller_spec = vim.vm.device.VirtualDeviceSpec()
-                        controller_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
-                        controller_spec.device = vim.vm.device.VirtualLsiLogicController()
-                        controller_spec.device.key = 1000
-                        controller_spec.device.sharedBus = vim.vm.device.VirtualSCSIController.Sharing.noSharing
-                        controller_spec.device.busNumber = 0
-                        controller_spec.device.hotAddRemove = True
-                        spec.deviceChange.append(controller_spec)
-                        controller = controller_spec.device
-            
-                    # Configure disk backing
-                    disk_backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
-                    disk_backing.diskMode = 'persistent'
-                    disk_backing.fileName = ''
-                    new_disk.backing = disk_backing
-            
-                    # Assign the new disk to the controller
-                    new_disk.unitNumber = len([dev for dev in vm.config.hardware.device if isinstance(dev, vim.vm.device.VirtualDisk)])
-                    new_disk.controllerKey = controller.key
-            
-                    # Create a new disk addition specification
-                    new_disk_spec = vim.vm.device.VirtualDeviceSpec()
-                    new_disk_spec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.create
-                    new_disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
-                    new_disk_spec.device = new_disk
-            
-                    # Add the disk addition specification to the VM configuration
-                    spec.deviceChange.append(new_disk_spec)
+            self.modify_disks(vm, profile)
    
             # Change network port group (VLAN)
-            for device in vm.config.hardware.device:
-                if isinstance(device, vim.vm.device.VirtualEthernetCard):
-                    network_spec = vim.vm.device.VirtualDeviceSpec()
-                    network_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
-                    device.backing.deviceName = profile.get('vlan', '')
-                    network_spec.device = device
-                    spec.deviceChange.append(network_spec)
-                    break
+            self.modify_network_adapters(vm, profile)
     
             # Reconfigure the VM with the updated specifications
             task = vm.ReconfigVM_Task(spec)
