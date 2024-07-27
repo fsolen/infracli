@@ -1,5 +1,7 @@
 Example commands, i will merge that to main cli later.
 
+# dont forget to change psexec remote policy on dns servers // you can run Enable-PSRemoting -Force
+
 fsclid.py dns list example.com
  
 fsclid.py dns get A example.com domain1.com
