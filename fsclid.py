@@ -4,7 +4,7 @@ import dns.update
 import dns.resolver
 import os
 
-DNS_CONFIG_PATH = 'dnsserver_configs/dns_configs.txt'
+DNS_CONFIG_PATH = '../dns_configs.txt'
 
 def load_dns_servers(domain):
     with open(DNS_CONFIG_PATH, 'r') as file:
@@ -41,22 +41,25 @@ def get_dns_record(record_type, name, dns_server):
 
 def add_dns_record(record_type, name, value, ttl, dns_server, priority=None):
     if check_if_exists(record_type, name, dns_server):
-        print(f"{record_type} record for {name} already exists.")
-        return
+        confirm = input(f"{record_type} record for {name} already exists. Do you want to update it? (yes/no): ")
+        if confirm.lower() != 'yes':
+            print("Add operation cancelled.")
+            return
     update = dns.update.Update(dns_server)
     if record_type == 'A':
-        update.add(name, ttl, 'A', value)
+        update.replace(name, ttl, 'A', value)
+        # Automatically add PTR record for A record
+        ptr_name = '.'.join(reversed(value.split('.'))) + '.in-addr.arpa'
+        update.replace(ptr_name, ttl, 'PTR', name)
     elif record_type == 'CNAME':
-        update.add(name, ttl, 'CNAME', value)
-    elif record_type == 'PTR':
-        update.add(name, ttl, 'PTR', value)
+        update.replace(name, ttl, 'CNAME', value)
     elif record_type == 'TXT':
-        update.add(name, ttl, 'TXT', value)
+        update.replace(name, ttl, 'TXT', value)
     elif record_type == 'MX':
         if priority is None:
             print("MX record requires a priority value.")
             return
-        update.add(name, ttl, 'MX', priority, value)
+        update.replace(name, ttl, 'MX', priority, value)
     else:
         print(f"Unsupported record type: {record_type}")
         return
@@ -74,10 +77,11 @@ def del_dns_record(record_type, name, value, dns_server, priority=None):
     update = dns.update.Update(dns_server)
     if record_type == 'A':
         update.delete(name, 'A', value)
+        # Automatically delete PTR record for A record
+        ptr_name = '.'.join(reversed(value.split('.'))) + '.in-addr.arpa'
+        update.delete(ptr_name, 'PTR', name)
     elif record_type == 'CNAME':
         update.delete(name, 'CNAME', value)
-    elif record_type == 'PTR':
-        update.delete(name, 'PTR', value)
     elif record_type == 'TXT':
         update.delete(name, 'TXT', value)
     elif record_type == 'MX':
@@ -98,7 +102,7 @@ def main():
     get_parser.add_argument('domain', help='Domain name to get DNS server address')
 
     add_parser = subparsers.add_parser('add', help='Add DNS record')
-    add_parser.add_argument('record_type', choices=['A', 'CNAME', 'PTR', 'TXT', 'MX'], help='Type of DNS record')
+    add_parser.add_argument('record_type', choices=['A', 'CNAME', 'TXT', 'MX'], help='Type of DNS record')
     add_parser.add_argument('name', help='Name of the DNS record')
     add_parser.add_argument('value', help='Value of the DNS record')
     add_parser.add_argument('--ttl', type=int, default=3600, help='Time to live of the DNS record')
@@ -106,7 +110,7 @@ def main():
     add_parser.add_argument('--priority', type=int, help='Priority for MX record')
 
     del_parser = subparsers.add_parser('del', help='Delete DNS record')
-    del_parser.add_argument('record_type', choices=['A', 'CNAME', 'PTR', 'TXT', 'MX'], help='Type of DNS record')
+    del_parser.add_argument('record_type', choices=['A', 'CNAME', 'TXT', 'MX'], help='Type of DNS record')
     del_parser.add_argument('name', help='Name of the DNS record')
     del_parser.add_argument('value', help='Value of the DNS record')
     del_parser.add_argument('domain', help='Domain name to get DNS server address')
