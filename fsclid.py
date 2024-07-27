@@ -3,6 +3,7 @@ import dns.query
 import dns.update
 import dns.resolver
 import os
+from tabulate import tabulate
 
 DNS_CONFIG_PATH = 'dnsserver_configs/dns_configs.txt'
 
@@ -92,6 +93,23 @@ def del_dns_record(record_type, name, value, dns_server, priority=None):
     response = dns.query.tcp(update, dns_server)
     print(response)
 
+def list_dns_records(domain, dns_server):
+    record_types = ['A', 'CNAME', 'PTR', 'TXT', 'MX']
+    records = []
+    for record_type in record_types:
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = [dns_server]
+            answers = resolver.resolve(domain, record_type)
+            for rdata in answers:
+                records.append([record_type, domain, rdata.to_text()])
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            continue
+        except Exception as e:
+            print(f"Error: {e}")
+            continue
+    print(tabulate(records, headers=['Type', 'Name', 'Value'], tablefmt='pretty'))
+
 def main():
     parser = argparse.ArgumentParser(description='Manage Microsoft DNS server records.')
     subparsers = parser.add_subparsers(dest='command', required=True)
@@ -116,6 +134,9 @@ def main():
     del_parser.add_argument('domain', help='Domain name to get DNS server address')
     del_parser.add_argument('--priority', type=int, help='Priority for MX record')
 
+    list_parser = subparsers.add_parser('list', help='List all DNS records for a domain')
+    list_parser.add_argument('domain', help='Domain name to get DNS server address')
+
     args = parser.parse_args()
     dns_server = load_dns_servers(args.domain)
     if not dns_server:
@@ -128,6 +149,8 @@ def main():
         add_dns_record(args.record_type, args.name, args.value, args.ttl, dns_server, args.priority)
     elif args.command == 'del':
         del_dns_record(args.record_type, args.name, args.value, dns_server, args.priority)
+    elif args.command == 'list':
+        list_dns_records(args.domain, dns_server)
 
 if __name__ == '__main__':
     main()
