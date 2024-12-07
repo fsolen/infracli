@@ -388,7 +388,7 @@ class VMManager:
                 return network
         return None
     
-    def modify_network_adapters(self, vm, profile):
+def modify_network_adapters(self, vm, profile):
     # Get the network settings from the profile
     net_settings = profile.get('net', [])
 
@@ -438,7 +438,7 @@ class VMManager:
             device_change.device = new_network_adapter
             vm.config.hardware.device.append(device_change)
                         
-    def modify_disks(self, vm, profile):
+def modify_disks(self, vm, profile):
     # Get the disk configurations from the profile
     disk_configs = profile.get('disks', [])
 
@@ -456,8 +456,9 @@ class VMManager:
 
         # If the disk configuration is not found, add it to the VM
         if not disk_found:
-            print("You specified in the profile '{}', but the VM does not have a disk named '{}'.".format(disk_config.get('name'), disk_config.get('name')))\
-            print("Adding disk '{}' with size {} GB to the VM.".format(disk_config.get('name'), disk_config.get('size_gb')))\
+            print("You specified in the profile '{}', but the VM does not have a disk named '{}'.".format(disk_config.get('name'), disk_config.get('name')))
+            print("Adding disk '{}' with size {} GB to the VM.".format(disk_config.get('name'), disk_config.get('size_gb')))
+
 
             # Create a new disk device
             new_disk = vim.vm.device.VirtualDisk()
