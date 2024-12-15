@@ -45,22 +45,27 @@ def main():
     # VM Create Command
     create_parser = vm_subparsers.add_parser('create', help='Create a VM from template')
     create_parser.add_argument('profile_name', help='Name of the profile to create VM')
+    create_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
     # VM Delete Command
     delete_parser = vm_subparsers.add_parser('delete', help='Delete VM')
     delete_parser.add_argument('vm_name', help='Name of the VM to delete')
+    delete_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
     # VM List Command
-    vm_subparsers.add_parser('list', help='List all VMs')
+    list_parser = vm_subparsers.add_parser('list', help='List all VMs')
+    list_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
     # VM Snapshot Command
     snapshot_parser = vm_subparsers.add_parser('snapshot', help='Create VM snapshot')
     snapshot_parser.add_argument('vm_name', help='Name of the VM to snapshot')
+    snapshot_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
     # VM Modify Command
     modify_parser = vm_subparsers.add_parser('modify', help='Modify existing VM')
     modify_parser.add_argument('vm_name', help='Name of the VM to modify')
     modify_parser.add_argument('profile_name', help='Profile name for modification')
+    modify_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
     # Storage Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
@@ -100,7 +105,7 @@ def main():
     args = parser.parse_args()
 
     if args.tool == 'dns':
-        dns_manager = DNSManager(config_path="/dnsserver_configs")
+        dns_manager = DNSManager(config_path="c:/Users/Fatih/Documents/My Codes/infracli/dnsserver_configs")
         dns_server = dns_manager.get_dns_server(args.domain)
         if not dns_server:
             print(f"DNS server not found for domain {args.domain}")
@@ -116,7 +121,7 @@ def main():
             dns_manager.list_dns_records(args.domain)
 
     elif args.tool == 'vm':
-        vcenter_connector = vCenterConnector(config_path="/hypervisor_configs/vmware")
+        vcenter_connector = vCenterConnector(config_path="c:/Users/Fatih/Documents/My Codes/infracli/hypervisor_configs/vmware")
         if vcenter_connector.connect(args.vcenter_name):
             vm_manager = VMManager(vcenter_connector.service_instance, "c:/Users/Fatih/Documents/My Codes/infracli/vm_profiles")
 
@@ -136,7 +141,7 @@ def main():
             print("Failed to connect to vCenter")
 
     elif args.tool == 'storage':
-        storage_manager = StorageManager(config_path="/storage_configs")
+        storage_manager = StorageManager(config_path="c:/Users/Fatih/Documents/My Codes/infracli/storage_configs")
 
         if args.command == 'create_lun':
             storage_manager.create_lun(args.array_name, args.volume_name, args.size)
