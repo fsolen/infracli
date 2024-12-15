@@ -2,9 +2,10 @@ import argparse
 from dns_manager import DNSManager
 from vcenter_connector import vCenterConnector
 from vm_manager import VMManager
+from storage_manager import StorageManager
 
 def main():
-    parser = argparse.ArgumentParser(description='Unified DNS and VM Management Tool')
+    parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
     subparsers = parser.add_subparsers(dest='tool', required=True)
 
     # DNS Management Parser
@@ -61,6 +62,41 @@ def main():
     modify_parser.add_argument('vm_name', help='Name of the VM to modify')
     modify_parser.add_argument('profile_name', help='Profile name for modification')
 
+    # Storage Management Parser
+    storage_parser = subparsers.add_parser('storage', help='Storage management commands')
+    storage_subparsers = storage_parser.add_subparsers(dest='command', required=True)
+
+    # Storage Create LUN Command
+    create_lun_parser = storage_subparsers.add_parser('create_lun', help='Create a LUN')
+    create_lun_parser.add_argument('array_name', help='Name of the storage array')
+    create_lun_parser.add_argument('volume_name', help='Name of the volume')
+    create_lun_parser.add_argument('size', help='Size of the volume')
+
+    # Storage Create Host Command
+    create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
+    create_host_parser.add_argument('array_name', help='Name of the storage array')
+    create_host_parser.add_argument('host_name', help='Name of the host')
+
+    # Storage Map Volume to Host Command
+    map_volume_parser = storage_subparsers.add_parser('map_volume', help='Map volume to host')
+    map_volume_parser.add_argument('array_name', help='Name of the storage array')
+    map_volume_parser.add_argument('volume_name', help='Name of the volume')
+    map_volume_parser.add_argument('host_name', help='Name of the host')
+
+    # Storage Take Snapshot Command
+    snapshot_lun_parser = storage_subparsers.add_parser('snapshot_lun', help='Take snapshot of a LUN')
+    snapshot_lun_parser.add_argument('array_name', help='Name of the storage array')
+    snapshot_lun_parser.add_argument('volume_name', help='Name of the volume')
+    snapshot_lun_parser.add_argument('snapshot_name', help='Name of the snapshot')
+
+    # Storage List Hosts Command
+    list_hosts_parser = storage_subparsers.add_parser('list_hosts', help='List all hosts')
+    list_hosts_parser.add_argument('array_name', help='Name of the storage array')
+
+    # Storage List LUNs Command
+    list_luns_parser = storage_subparsers.add_parser('list_luns', help='List all LUNs')
+    list_luns_parser.add_argument('array_name', help='Name of the storage array')
+
     args = parser.parse_args()
 
     if args.tool == 'dns':
@@ -100,6 +136,22 @@ def main():
             vcenter_connector.disconnect()
         else:
             print("Failed to connect to vCenter")
+
+    elif args.tool == 'storage':
+        storage_manager = StorageManager(config_path="storage_configs")
+
+        if args.command == 'create_lun':
+            storage_manager.create_lun(args.array_name, args.volume_name, args.size)
+        elif args.command == 'create_host':
+            storage_manager.create_host(args.array_name, args.host_name)
+        elif args.command == 'map_volume':
+            storage_manager.map_volume_to_host(args.array_name, args.volume_name, args.host_name)
+        elif args.command == 'snapshot_lun':
+            storage_manager.take_snapshot(args.array_name, args.volume_name, args.snapshot_name)
+        elif args.command == 'list_hosts':
+            storage_manager.list_hosts(args.array_name)
+        elif args.command == 'list_luns':
+            storage_manager.list_luns(args.array_name)
 
 if __name__ == '__main__':
     main()
