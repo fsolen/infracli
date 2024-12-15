@@ -120,6 +120,10 @@ def main():
     list_luns_parser = storage_subparsers.add_parser('list_luns', help='List all LUNs')
     list_luns_parser.add_argument('array_name', help='Name of the storage array')
 
+    # Storage List Host-LUN Mappings Command
+    list_host_lun_mappings_parser = storage_subparsers.add_parser('list_host_lun_mappings', help='List host-LUN mappings')
+    list_host_lun_mappings_parser.add_argument('array_name', help='Name of the storage array')
+
     # Harvester Management Parser
     harvester_parser = subparsers.add_parser('hrv', help='Harvester HCI management commands')
     harvester_subparsers = harvester_parser.add_subparsers(dest='command', required=True)
@@ -224,6 +228,8 @@ def main():
                 storage_manager.list_hosts(args.array_name)
             elif args.command == 'list_luns':
                 storage_manager.list_luns(args.array_name)
+            elif args.command == 'list_host_lun_mappings':
+                storage_manager.list_host_lun_mappings(args.array_name)
                 
         elif args.tool == 'hrv':
             harvester_manager = HarvesterManager(config_path="manager_configs/hypervisor_configs/harvester")
