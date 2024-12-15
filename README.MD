@@ -7,7 +7,8 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 ## Notes
 * Openshift Virtualization (Kubevirt) (Harvester HCI works well but Openshift Virtualization not tested yet)
 * OpenNebula supports added (Not fully tested yet)
-- Vault integration for authentication tokens 
+## Planned
+* Vault integration to secure authentication tokens
 
 ##  Do not use in production yet! 
 
@@ -46,7 +47,7 @@ dns_server: 127.0.0.1
 
 ### Configuration for vCenter Servers
 
-Create vCenter configuration files in the "hypervisor_configs/vmware" directory. Each file should be named after the vCenter and have the following format:
+Create vCenter configuration files in the "hypervisor_configs/vmware" directory. Each file should be named after the "vcenter" and have the following format:
 ```yaml
 host: vcenter01.fatihsolen.local
 username: vcenter_username
@@ -55,10 +56,19 @@ password: vcenter_password
 
 ### Configuration for Harvester HCI Clusters
 
-Create vCenter configuration files in the "hypervisor_configs/harvester" directory. Each file should be named after the Harvester and have the following format:
+Create vCenter configuration files in the "hypervisor_configs/harvester" directory. Each file should be named after the "harvester" and have the following format:
 ```yaml
 harvester_api_url: https://harvester01.fatihsolen.local
 harvester_api_token: **TOKEN**
+```
+
+### Configuration for OpenNebula Clusters
+
+Create vCenter configuration files in the "hypervisor_configs/opennebula" directory. Each file should be named after the "one" and have the following format:
+```yaml
+opennebula_api_url: http://opennebula01.fatihsolen.local:2633/RPC2
+opennebula_username: username
+opennebula_password: password
 ```
 
 ### Configuration for Pure Storage Arrays
