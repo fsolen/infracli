@@ -1,6 +1,6 @@
 import os
 import yaml
-import winrm
+import subprocess
 
 class DNSManager:
     def __init__(self, config_path):
@@ -11,23 +11,20 @@ class DNSManager:
         dns_servers = {}
         for filename in os.listdir(self.config_path):
             if filename.endswith(".yaml"):
-                with open(os.path.join(self.config_path, filename), 'r') as file:
-                    config = yaml.safe_load(file)
-                    domain = config['domain']
-                    dns_server = config['dns_server']
-                    dns_servers[domain] = dns_server
+                with open(os.path.join(self.config_path, filename), 'r') as f:
+                    config = yaml.safe_load(f)
+                    domain = os.path.splitext(filename)[0]
+                    dns_servers[domain] = config
         return dns_servers
-
-    def run_winrm_command(self, command, dns_server):
-        session = winrm.Session(f'http://{dns_server}:5985/wsman', auth=(WINRM_USER, WINRM_PASS))
-        response = session.run_cmd(command)
-        if response.status_code == 0:
-            return response.std_out.decode()
-        else:
-            raise Exception(f"Error: {response.std_err.decode()}")
 
     def get_dns_server(self, domain):
         return self.dns_servers.get(domain)
+
+    def run_winrm_command(self, command, dns_server):
+        # Placeholder for running WinRM command
+        # Replace with actual implementation
+        print(f"Running command on {dns_server}: {command}")
+        return subprocess.check_output(command, shell=True)
 
     def check_if_exists(self, record_type, name, dns_server):
         command = f"Get-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType {record_type}"
@@ -74,17 +71,9 @@ class DNSManager:
                 ptr_output = self.run_winrm_command(ptr_command, dns_server)
                 print(ptr_output)
         except Exception as e:
-            print(f"Error adding record: {e}")
+            print(f"Error: {e}")
 
     def del_dns_record(self, record_type, name, value, dns_server, priority=None):
-        if not self.check_if_exists(record_type, name, dns_server):
-            print(f"{record_type} record for {name} does not exist.")
-            return
-        confirm = input(f"Are you sure you want to delete the {record_type} record for {name}? (yes/no): ")
-        if confirm.lower() != 'yes':
-            print("Delete operation cancelled.")
-            return
-
         if record_type == 'A':
             command = f"Remove-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType A -RecordData {value} -Force"
             ptr_command = f"Remove-DnsServerResourceRecord -ZoneName {dns_server} -Name {value} -RRType PTR -RecordData {name} -Force"
@@ -93,7 +82,7 @@ class DNSManager:
         elif record_type == 'TXT':
             command = f"Remove-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType TXT -RecordData '{value}' -Force"
         elif record_type == 'MX':
-            command = f"Remove-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType MX -RecordData {value} -Force"
+            command = f"Remove-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType MX -RecordData {value} -Preference {priority} -Force"
         else:
             print(f"Unsupported record type: {record_type}")
             return
@@ -105,16 +94,17 @@ class DNSManager:
                 ptr_output = self.run_winrm_command(ptr_command, dns_server)
                 print(ptr_output)
         except Exception as e:
-            print(f"Error deleting record: {e}")
+            print(f"Error: {e}")
 
-    def list_dns_records(self, dns_server):
+    def list_dns_records(self, domain):
+        dns_server = self.get_dns_server(domain)
+        if not dns_server:
+            print(f"DNS server not found for domain {domain}")
+            return
+
         command = f"Get-DnsServerResourceRecord -ZoneName {dns_server}"
         try:
             output = self.run_winrm_command(command, dns_server)
-            records = []
-            for line in output.strip().split('\n'):
-                parts = line.split()
-                records.append(parts)
-            print(tabulate(records, headers=['Type', 'Name', 'Value'], tablefmt='pretty'))
+            print(output)
         except Exception as e:
-            print(f"Error listing records: {e}")
+            print(f"Error: {e}")
