@@ -126,6 +126,30 @@ def main():
     modify_parser.add_argument('vm_name', help='Name of the VM to modify')
     modify_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
     modify_parser.add_argument('modifications', help='Modifications to apply in YAML format')
+
+    # OpenNebula Management Parser
+    opennebula_parser = subparsers.add_parser('one', help='OpenNebula management commands')
+    opennebula_subparsers = opennebula_parser.add_subparsers(dest='command', required=True)
+
+    # OpenNebula Create VM Command
+    create_parser = opennebula_subparsers.add_parser('create', help='Create a VM from profile')
+    create_parser.add_argument('profile_name', help='Name of the profile to create VM')
+    create_parser.add_argument('cluster_name', help='Name of the OpenNebula cluster configuration')
+
+    # OpenNebula Delete VM Command
+    delete_parser = opennebula_subparsers.add_parser('delete', help='Delete VM')
+    delete_parser.add_argument('vm_id', help='ID of the VM to delete')
+    delete_parser.add_argument('cluster_name', help='Name of the OpenNebula cluster configuration')
+
+    # OpenNebula List VMs Command
+    list_parser = opennebula_subparsers.add_parser('list', help='List all VMs')
+    list_parser.add_argument('cluster_name', help='Name of the OpenNebula cluster configuration')
+
+    # OpenNebula Modify VM Command
+    modify_parser = opennebula_subparsers.add_parser('modify', help='Modify an existing VM')
+    modify_parser.add_argument('vm_id', help='ID of the VM to modify')
+    modify_parser.add_argument('profile_name', help='Name of the profile to use for modifications')
+    modify_parser.add_argument('cluster_name', help='Name of the OpenNebula cluster configuration')
     
     args = parser.parse_args()
 
@@ -181,7 +205,7 @@ def main():
         elif args.command == 'list_luns':
             storage_manager.list_luns(args.array_name)
             
-    if args.tool == 'hrv':
+    elif args.tool == 'hrv':
         harvester_manager = HarvesterManager(config_path="hypervisor_configs/harvester")
 
         if args.command == 'create':
@@ -196,6 +220,24 @@ def main():
         elif args.command == 'modify':
             modifications = yaml.safe_load(args.modifications)
             harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
+
+    elif args.tool == 'one':
+        opennebula_manager = OpenNebulaManager(config_path="hypervisor_configs/opennebula")
+
+        if args.command == 'create':
+            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
+            with open(profile_path, 'r') as f:
+                profile = yaml.safe_load(f)
+            opennebula_manager.create_vm(args.cluster_name, profile)
+        elif args.command == 'delete':
+            opennebula_manager.delete_vm(args.cluster_name, args.vm_id)
+        elif args.command == 'list':
+            opennebula_manager.list_vms(args.cluster_name)
+        elif args.command == 'modify':
+            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
+            with open(profile_path, 'r') as f:
+                profile = yaml.safe_load(f)
+            opennebula_manager.modify_vm(args.cluster_name, args.vm_id, profile)
             
 if __name__ == '__main__':
     main()
