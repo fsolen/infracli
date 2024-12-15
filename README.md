@@ -1,4 +1,4 @@
-# InfraCLI by Fatih Solen
+# InfraCLI
 https://fatihsolen.com
 https://www.linkedin.com/in/fatihsolen/
 
