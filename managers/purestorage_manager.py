@@ -71,7 +71,15 @@ class StorageManager:
         array = self.arrays.get(array_name)
         if array:
             hosts = array.list_hosts()
-            print(tabulate(hosts, headers="keys"))
+            formatted_hosts = [
+                {
+                    "Name": host["name"],
+                    "IQNs": ", ".join(host.get("iqn", [])),
+                    "WWNs": ", ".join(host.get("wwn", []))
+                }
+                for host in hosts
+            ]
+            print(tabulate(formatted_hosts, headers="keys"))
         else:
             print(f"Array {array_name} not found.")
 
@@ -80,5 +88,23 @@ class StorageManager:
         if array:
             luns = array.list_volumes()
             print(tabulate(luns, headers="keys"))
+        else:
+            print(f"Array {array_name} not found.")
+
+    def list_host_lun_mappings(self, array_name):
+        array = self.arrays.get(array_name)
+        if array:
+            mappings = []
+            hosts = array.list_hosts()
+            for host in hosts:
+                host_name = host["name"]
+                volumes = array.list_host_connections(host_name)
+                for volume in volumes:
+                    mappings.append({
+                        "Host": host_name,
+                        "Volume": volume["vol"],
+                        "LUN": volume["lun"]
+                    })
+            print(tabulate(mappings, headers="keys"))
         else:
             print(f"Array {array_name} not found.")
