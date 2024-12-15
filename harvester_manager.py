@@ -110,3 +110,38 @@ class HarvesterManager:
                 print(f"VM Name: {vm['metadata']['name']}, Status: {vm['status']['phase']}")
         else:
             print(f"Failed to list VMs in cluster {cluster_name}: {response.text}")
+
+    def modify_vm(self, cluster_name, vm_name, modifications):
+        config = self.get_cluster_config(cluster_name)
+        if not config:
+            print(f"Cluster configuration for {cluster_name} not found.")
+            return
+
+        api_url = config['harvester_api_url']
+        token = config['harvester_api_token']
+        headers = {'Authorization': f'Bearer {token}'}
+
+        # Fetch the existing VM configuration
+        response = requests.get(f"{api_url}/v1/kubevirt.io.virtualmachines/default/{vm_name}", headers=headers)
+        if response.status_code != 200:
+            print(f"Failed to fetch VM {vm_name} from cluster {cluster_name}: {response.text}")
+            return
+
+        vm_config = response.json()
+
+        # Apply modifications to the VM configuration
+        for key, value in modifications.items():
+            if key in vm_config['spec']['template']['spec']['domain']:
+                vm_config['spec']['template']['spec']['domain'][key] = value
+            elif key in vm_config['spec']['template']['spec']['domain']['devices']:
+                vm_config['spec']['template']['spec']['domain']['devices'][key] = value
+            else:
+                print(f"Modification key {key} not found in VM configuration.")
+                return
+
+        # Update the VM with the modified configuration
+        response = requests.put(f"{api_url}/v1/kubevirt.io.virtualmachines/default/{vm_name}", json=vm_config, headers=headers)
+        if response.status_code == 200:
+            print(f"VM {vm_name} modified successfully in cluster {cluster_name}.")
+        else:
+            print(f"Failed to modify VM {vm_name} in cluster {cluster_name}: {response.text}")
