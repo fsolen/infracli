@@ -139,7 +139,7 @@ python fscli.py vm modify <vm_name> <profile_name> <vcenter_name>
 #### Harvester HCI
 **Create VM**
 ```sh
-python fscli.py hrv create <vm_name> <harvester_cluster_name>
+python fscli.py hrv create <profile_name> <harvester_cluster_name>
 ```
 
 **Delete VM**
@@ -155,6 +155,27 @@ python fscli.py hrv list <harvester_cluster_name>
 **Modify VMs**
 ```sh
 python fscli.py hrv modify <vm_name> <profile_name> <harvester_cluster_name>
+```
+
+#### OpenNebula
+**Create VM**
+```sh
+python fscli.py one create <profile_name> <cluster_name>
+```
+
+**Delete VM**
+```sh
+python fscli.py one delete <vm_id> <cluster_name>
+```
+
+**List VMs**
+```sh
+python fscli.py one list <cluster_name>
+```
+
+**Modify VMs**
+```sh
+python fscli.py one modify <vm_id> <profile_name> <cluster_name>
 ```
 
 ### Storage Management
