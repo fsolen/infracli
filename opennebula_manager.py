@@ -1,6 +1,7 @@
 import os
 import yaml
 import requests
+from xmlrpc.client import ServerProxy
 
 class OpenNebulaManager:
     def __init__(self, config_path):
@@ -27,26 +28,34 @@ class OpenNebulaManager:
             return
 
         api_url = config['opennebula_api_url']
-        token = config['opennebula_api_token']
-        headers = {'Authorization': f'Bearer {token}'}
+        username = config['opennebula_username']
+        password = config['opennebula_password']
+        server = ServerProxy(api_url)
 
         # Create VM payload from profile
-        payload = {
-            "vm": {
-                "name": profile['hostname_pattern'].format(index=1),
-                "template": profile['template_id'],
-                "cpu": profile['cpu'],
-                "memory": profile['memory'],
-                "disks": profile['disks'],
-                "networks": profile['networks']
-            }
-        }
+        template = f"""
+        NAME = "{profile['hostname_pattern'].format(index=1)}"
+        CPU = "{profile['cpu']}"
+        MEMORY = "{profile['memory']}"
 
-        response = requests.post(f"{api_url}/vm", json=payload, headers=headers)
-        if response.status_code == 201:
-            print(f"VM created successfully in cluster {cluster_name}.")
-        else:
-            print(f"Failed to create VM in cluster {cluster_name}: {response.text}")
+        DISK = [
+            IMAGE = "{profile['disks'][0]['name']}",
+            SIZE = "{profile['disks'][0]['size_gb']}G"
+        ]
+
+        NIC = [
+            NETWORK = "default"
+        ]
+        """
+
+        try:
+            response = server.one.template.instantiate(username + ":" + password, template, False, "", False)
+            if response[0] == True:
+                print(f"VM created successfully in cluster {cluster_name}.")
+            else:
+                print(f"Failed to create VM in cluster {cluster_name}: {response[1]}")
+        except Exception as e:
+            print(f"Error: {e}")
 
     def delete_vm(self, cluster_name, vm_id):
         config = self.get_cluster_config(cluster_name)
@@ -55,14 +64,18 @@ class OpenNebulaManager:
             return
 
         api_url = config['opennebula_api_url']
-        token = config['opennebula_api_token']
-        headers = {'Authorization': f'Bearer {token}'}
+        username = config['opennebula_username']
+        password = config['opennebula_password']
+        server = ServerProxy(api_url)
 
-        response = requests.delete(f"{api_url}/vm/{vm_id}", headers=headers)
-        if response.status_code == 200:
-            print(f"VM {vm_id} deleted successfully from cluster {cluster_name}.")
-        else:
-            print(f"Failed to delete VM {vm_id} from cluster {cluster_name}: {response.text}")
+        try:
+            response = server.one.vm.action(username + ":" + password, "terminate", int(vm_id))
+            if response[0] == True:
+                print(f"VM {vm_id} deleted successfully from cluster {cluster_name}.")
+            else:
+                print(f"Failed to delete VM {vm_id} from cluster {cluster_name}: {response[1]}")
+        except Exception as e:
+            print(f"Error: {e}")
 
     def list_vms(self, cluster_name):
         config = self.get_cluster_config(cluster_name)
@@ -71,16 +84,20 @@ class OpenNebulaManager:
             return
 
         api_url = config['opennebula_api_url']
-        token = config['opennebula_api_token']
-        headers = {'Authorization': f'Bearer {token}'}
+        username = config['opennebula_username']
+        password = config['opennebula_password']
+        server = ServerProxy(api_url)
 
-        response = requests.get(f"{api_url}/vm", headers=headers)
-        if response.status_code == 200:
-            vms = response.json().get('vms', [])
-            for vm in vms:
-                print(f"VM ID: {vm['id']}, Name: {vm['name']}, Status: {vm['status']}")
-        else:
-            print(f"Failed to list VMs in cluster {cluster_name}: {response.text}")
+        try:
+            response = server.one.vmpool.info(username + ":" + password, -2, -1, -1, -1)
+            if response[0] == True:
+                vms = response[1]
+                for vm in vms:
+                    print(f"VM ID: {vm['ID']}, Name: {vm['NAME']}, Status: {vm['STATE']}")
+            else:
+                print(f"Failed to list VMs in cluster {cluster_name}: {response[1]}")
+        except Exception as e:
+            print(f"Error: {e}")
 
     def modify_vm(self, cluster_name, vm_id, profile):
         config = self.get_cluster_config(cluster_name)
@@ -89,26 +106,30 @@ class OpenNebulaManager:
             return
 
         api_url = config['opennebula_api_url']
-        token = config['opennebula_api_token']
-        headers = {'Authorization': f'Bearer {token}'}
+        username = config['opennebula_username']
+        password = config['opennebula_password']
+        server = ServerProxy(api_url)
 
-        # Fetch the existing VM configuration
-        response = requests.get(f"{api_url}/vm/{vm_id}", headers=headers)
-        if response.status_code != 200:
-            print(f"Failed to fetch VM {vm_id} from cluster {cluster_name}: {response.text}")
-            return
+        # Modify VM payload from profile
+        template = f"""
+        CPU = "{profile['cpu']}"
+        MEMORY = "{profile['memory']}"
 
-        vm_config = response.json()
+        DISK = [
+            IMAGE = "{profile['disks'][0]['name']}",
+            SIZE = "{profile['disks'][0]['size_gb']}G"
+        ]
 
-        # Apply modifications from the profile to the VM configuration
-        vm_config['vm']['cpu'] = profile['cpu']
-        vm_config['vm']['memory'] = profile['memory']
-        vm_config['vm']['disks'] = profile['disks']
-        vm_config['vm']['networks'] = profile['networks']
+        NIC = [
+            NETWORK = "default"
+        ]
+        """
 
-        # Update the VM with the modified configuration
-        response = requests.put(f"{api_url}/vm/{vm_id}", json=vm_config, headers=headers)
-        if response.status_code == 200:
-            print(f"VM {vm_id} modified successfully in cluster {cluster_name}.")
-        else:
-            print(f"Failed to modify VM {vm_id} in cluster {cluster_name}: {response.text}")
+        try:
+            response = server.one.vm.update(username + ":" + password, int(vm_id), template, 1)
+            if response[0] == True:
+                print(f"VM {vm_id} modified successfully in cluster {cluster_name}.")
+            else:
+                print(f"Failed to modify VM {vm_id} in cluster {cluster_name}: {response[1]}")
+        except Exception as e:
+            print(f"Error: {e}")
