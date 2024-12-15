@@ -1,15 +1,28 @@
-from pyVim.connect import SmartConnect, Disconnect
+import os
 import ssl
 import yaml
+from pyVim.connect import SmartConnect, Disconnect
 
 class vCenterConnector:
-    def __init__(self, config_file):
-        self.config_file = config_file
-        self.service_instance = None
+    def __init__(self, config_path):
+        self.config_path = config_path
+        self.vcenters = self.load_vcenters()
 
-    def connect(self):
-        with open(self.config_file, 'r') as f:
-            config = yaml.safe_load(f)
+    def load_vcenters(self):
+        vcenters = {}
+        for filename in os.listdir(self.config_path):
+            if filename.endswith(".yaml"):
+                with open(os.path.join(self.config_path, filename), 'r') as f:
+                    config = yaml.safe_load(f)
+                    vcenter_name = os.path.splitext(filename)[0]
+                    vcenters[vcenter_name] = config
+        return vcenters
+
+    def connect(self, vcenter_name):
+        config = self.vcenters.get(vcenter_name)
+        if not config:
+            print(f"vCenter configuration for {vcenter_name} not found.")
+            return False
 
         host = config['host']
         username = config['username']
@@ -20,10 +33,7 @@ class vCenterConnector:
             context = ssl._create_unverified_context()
 
         try:
-            self.service_instance = SmartConnect(host=host,
-                                               user=username,
-                                               pwd=password,
-                                               sslContext=context)
+            self.service_instance = SmartConnect(host=host, user=username, pwd=password, sslContext=context)
             return True
         except Exception as e:
             print("Unable to connect to vCenter:", str(e))
