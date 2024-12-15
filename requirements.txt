@@ -3,3 +3,4 @@ pyyaml
 purestorage
 tabulate
 pywinrm
+requests
