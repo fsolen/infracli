@@ -4,6 +4,7 @@ from vcenter_connector import vCenterConnector
 from vm_manager import VMManager
 from storage_manager import StorageManager
 from harvester_manager import HarvesterManager
+from opennebula_manager import OpenNebulaManager
 
 def main():
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
