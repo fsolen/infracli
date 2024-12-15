@@ -1,22 +1,24 @@
+import os
+import ssl
+import yaml
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
-import ssl
-import os
-import yaml
 
 class VMManager:
     def __init__(self, service_instance, profiles_path):
         self.service_instance = service_instance
         self.profiles_path = profiles_path
+        self.profiles = self.load_profiles()
 
     def load_profiles(self):
-        self.profiles = {}
+        profiles = {}
         for filename in os.listdir(self.profiles_path):
             if filename.endswith(".yaml"):
                 profile_name = os.path.splitext(filename)[0]
                 with open(os.path.join(self.profiles_path, filename), 'r') as f:
                     profile_data = yaml.safe_load(f)
-                    self.profiles[profile_name] = profile_data
+                    profiles[profile_name] = profile_data
+        return profiles
 
     def select_host(self):
         content = self.service_instance.RetrieveContent()
