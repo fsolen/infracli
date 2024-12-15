@@ -8,9 +8,8 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 * Openshift Virtualization (Kubevirt) (Harvester HCI works well but Openshift Virtualization not tested yet)
 * OpenNebula supports added (Not fully tested yet)
 - Vault integration for authentication tokens 
-- Adding WWPN and iQN to hosts for PureStorage
 
-#  Do not use in production yet! 
+##  Do not use in production yet! 
 
 ## Installation
 
