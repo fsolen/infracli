@@ -41,6 +41,14 @@ username: vcenter_username
 password: vcenter_password
 ```
 
+### Configuration for Harvester HCI Clusters
+
+Create vCenter configuration files in the "hypervisor_configs/harvester" directory. Each file should be named after the Harvester and have the following format:
+```yaml
+harvester_api_url: https://harvester01.fatihsolen.local
+harvester_api_token: **TOKEN**
+```
+
 ### Configuration for Pure Storage Arrays
 
 Create storage configuration files in the "storage_configs" directory. Each file should be named after the storage array and have the following format:
