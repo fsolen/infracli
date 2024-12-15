@@ -26,10 +26,12 @@ Vault integration for authentication tokens under dev.
 
 ### Configuration for Microsoft DNS Servers
 
-Create DNS configuration files in the "dnsserver_configs" directory. Each file should be named after the domain and have the following format:
+Create DNS configuration files in the "dnsserver_configs" directory. Each file should be named after the domain and have the following format (For this example, the file name should be fatihsolen_com.yaml):
 ```yaml
 domain: fatihsolen.com
-dns_server: 127.0.0.1
+dns_server: 123.123.123.123
+username: admin
+password: secret
 ```
 
 ### Configuration for vCenter Servers
@@ -74,22 +76,32 @@ network: default
 
 **Get DNS Record**
 ```sh
-python fscli.py dns get A example.com domain1
+python fscli.py dns get A example.fatihsolen.com fatihsolen_com
+python fscli.py dns get CNAME alias.fatihsolen.com fatihsolen_com
+python fscli.py dns get PTR 123.123.123.123 fatihsolen_com
+python fscli.py dns get TXT example.fatihsolen.com fatihsolen_com
+python fscli.py dns get MX example.fatihsolen.com fatihsolen_com
 ```
 
 **Add DNS Record**
 ```sh
-python fscli.py dns add A example.com 192.168.1.1 domain1 --ttl 3600
+python fscli.py dns add A example.fatihsolen.com 192.168.1.1 --ttl 3600 fatihsolen_com
+python fscli.py dns add CNAME alias.fatihsolen.com example.fatihsolen.com --ttl 3600 fatihsolen_com
+python fscli.py dns add TXT example.fatihsolen.com "v=spf1 include:fatihsolen.com ~all" --ttl 3600 fatihsolen_com
+python fscli.py dns add MX example.fatihsolen.com mail.example.com --ttl 3600 --priority 10 fatihsolen_com
 ```
 
 **Delete DNS Record**
 ```sh
-python fscli.py dns del A example.com 192.168.1.1 domain1
+python fscli.py dns del A example.fatihsolen.com 192.168.1.1 fatihsolen_com
+python fscli.py dns del CNAME alias.fatihsolen.com example.fatihsolen.com fatihsolen_com
+python fscli.py dns del TXT example.fatihsolen.com "v=spf1 include:example.com ~all" fatihsolen_com
+python fscli.py dns del MX example.fatihsolen.com mail.example.com fatihsolen_com
 ```
 
 **List DNS Records**
 ```sh
-python fscli.py dns list domain1
+python fscli.py dns list fatihsolen_com
 ```
 
 ### VM Management
