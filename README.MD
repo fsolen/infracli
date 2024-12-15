@@ -24,6 +24,16 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 	pip install -r requirements.txt
 	```
 
+3. Run the CLI:
+	```sh
+	python fscli.py --help
+	```
+
+4. Shorten Command (Optional)
+	```sh
+	bash setup_fscli.sh
+	```
+
 ## Configuration
 
 ### Configuration for Microsoft DNS Servers
