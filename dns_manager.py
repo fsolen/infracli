@@ -1,12 +1,25 @@
+import os
 import winrm
 
-DNS_CONFIG_PATH = 'dnsserver_configs/dns_configs.txt'
-WINRM_USER = 'username'
-WINRM_PASS = 'password'
-
 class DNSManager:
-    @staticmethod
-    def run_winrm_command(command, dns_server):
+    def __init__(self, config_path):
+        self.config_path = config_path
+        self.dns_servers = self.load_dns_servers()
+
+    def load_dns_servers(self):
+        dns_servers = {}
+        for filename in os.listdir(self.config_path):
+            if filename.endswith(".txt"):
+                with open(os.path.join(self.config_path, filename), 'r') as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        parts = line.strip().split()
+                        if len(parts) == 2:
+                            domain, server = parts
+                            dns_servers[domain] = server
+        return dns_servers
+
+    def run_winrm_command(self, command, dns_server):
         session = winrm.Session(f'http://{dns_server}:5985/wsman', auth=(WINRM_USER, WINRM_PASS))
         response = session.run_cmd(command)
         if response.status_code == 0:
@@ -14,15 +27,8 @@ class DNSManager:
         else:
             raise Exception(f"Error: {response.std_err.decode()}")
 
-    @staticmethod
-    def load_dns_servers(domain):
-        with open(DNS_CONFIG_PATH, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                parts = line.strip().split()
-                if len(parts) == 2 and parts[0] == domain:
-                    return parts[1]
-        return None
+    def get_dns_server(self, domain):
+        return self.dns_servers.get(domain)
 
     def check_if_exists(self, record_type, name, dns_server):
         command = f"Get-DnsServerResourceRecord -ZoneName {dns_server} -Name {name} -RRType {record_type}"
