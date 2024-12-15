@@ -1,12 +1,12 @@
 import argparse
 import os
 import yaml
-from dns_manager import DNSManager
-from vcenter_connector import vCenterConnector
-from vm_manager import VMManager
-from storage_manager import StorageManager
-from harvester_manager import HarvesterManager
-from opennebula_manager import OpenNebulaManager
+from managers.msdns_manager import DNSManager
+from managers.vcenter_connector import vCenterConnector
+from managers.vmware_manager import VMManager
+from managers.purestorage_manager import StorageManager
+from managers.harvester_manager import HarvesterManager
+from managers.opennebula_manager import OpenNebulaManager
 
 def load_profile(profile_name):
     profile_path = os.path.join("vm_profiles", f"{profile_name}.yaml")
@@ -163,7 +163,7 @@ def main():
 
     try:
         if args.tool == 'dns':
-            dns_manager = DNSManager(config_path="dnsserver_configs")
+            dns_manager = DNSManager(config_path="manager_configs/dnsserver_configs")
             dns_server = dns_manager.get_dns_server(args.domain)
             if not dns_server:
                 print(f"DNS server not found for domain {args.domain}")
@@ -179,7 +179,7 @@ def main():
                 dns_manager.list_dns_records(args.domain)
 
         elif args.tool == 'vm':
-            vcenter_connector = vCenterConnector(config_path="hypervisor_configs/vmware")
+            vcenter_connector = vCenterConnector(config_path="manager_configs/hypervisor_configs/vmware")
             if vcenter_connector.connect(args.vcenter_name):
                 vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
 
@@ -199,7 +199,7 @@ def main():
                 print("Failed to connect to vCenter")
 
         elif args.tool == 'storage':
-            storage_manager = StorageManager(config_path="storage_configs")
+            storage_manager = StorageManager(config_path="manager_configs/storage_configs")
 
             if args.command == 'create_lun':
                 storage_manager.create_lun(args.array_name, args.volume_name, args.size)
@@ -215,7 +215,7 @@ def main():
                 storage_manager.list_luns(args.array_name)
                 
         elif args.tool == 'hrv':
-            harvester_manager = HarvesterManager(config_path="hypervisor_configs/harvester")
+            harvester_manager = HarvesterManager(config_path="manager_configs/hypervisor_configs/harvester")
 
             if args.command == 'create':
                 profile = load_profile(args.profile_name)
@@ -229,7 +229,7 @@ def main():
                 harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
 
         elif args.tool == 'one':
-            opennebula_manager = OpenNebulaManager(config_path="hypervisor_configs/opennebula")
+            opennebula_manager = OpenNebulaManager(config_path="manager_configs/hypervisor_configs/opennebula")
 
             if args.command == 'create':
                 profile = load_profile(args.profile_name)
