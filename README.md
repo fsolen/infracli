@@ -2,7 +2,10 @@
 https://fatihsolen.com
 https://www.linkedin.com/in/fatihsolen/
 
-InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. Harvester/Openshift Virtualization (Kubevirt) - plus may be OpenNebula- supports under dev.
+InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
+
+Suse Harvester / Openshift Virtualization (Kubevirt) -plus may be OpenNebula- supports under dev. 
+Vault integration for authentication tokens under dev.
 
 #  Do not use in production yet! 
 
@@ -21,7 +24,7 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 
 ## Configuration
 
-### DNS Configuration
+### Configuration for Microsoft DNS Servers
 
 Create DNS configuration files in the "dnsserver_configs" directory. Each file should be named after the domain and have the following format:
 ```yaml
@@ -29,15 +32,22 @@ domain: fatihsolen.com
 dns_server: 127.0.0.1
 ```
 
-### vCenter Configuration
+### Configuration for vCenter Servers
 
 Create vCenter configuration files in the "hypervisor_configs/vmware" directory. Each file should be named after the vCenter and have the following format:
 ```yaml
-host: your_vcenter_host
-username: your_vcenter_username
-password: your_vcenter_password
+host: vcenter01.fatihsolen.local
+username: vcenter_username
+password: vcenter_password
 ```
 
+### Configuration for Pure Storage Arrays
+
+Create storage configuration files in the "storage_configs" directory. Each file should be named after the storage array and have the following format:
+```yaml
+pure_fa_api_url: purefa01.fatihsolen.local
+pure_fa_api_token: **TOKEN**
+```
 ### VM Host Group Profiles
 
 Create VM profile files in the "vm_profiles" directory. Each file should be named after the profile and have the following format:
@@ -48,14 +58,6 @@ cpu: 2
 memory: 4096
 disk: 40
 network: default
-```
-
-### Storage Configuration
-
-Create storage configuration files in the "storage_configs" directory. Each file should be named after the storage array and have the following format:
-```yaml
-pure_fa_api_url: purefa01.fatihsolen.local
-pure_fa_api_token: **TOKEN**
 ```
 
 ## Usage Examples
