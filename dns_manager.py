@@ -1,4 +1,5 @@
 import os
+import yaml
 import winrm
 
 class DNSManager:
@@ -9,14 +10,12 @@ class DNSManager:
     def load_dns_servers(self):
         dns_servers = {}
         for filename in os.listdir(self.config_path):
-            if filename.endswith(".txt"):
+            if filename.endswith(".yaml"):
                 with open(os.path.join(self.config_path, filename), 'r') as file:
-                    lines = file.readlines()
-                    for line in lines:
-                        parts = line.strip().split()
-                        if len(parts) == 2:
-                            domain, server = parts
-                            dns_servers[domain] = server
+                    config = yaml.safe_load(file)
+                    domain = config['domain']
+                    dns_server = config['dns_server']
+                    dns_servers[domain] = dns_server
         return dns_servers
 
     def run_winrm_command(self, command, dns_server):
