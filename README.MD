@@ -216,3 +216,8 @@ python fscli.py storage list_hosts <array_name>
 ```sh
 python fscli.py storage list_luns <array_name>
 ```
+
+**List Host and LUN Mappings**
+```sh
+python fscli.py storage list_host_lun_mappings <array_name>
+```
