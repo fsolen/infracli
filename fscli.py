@@ -1,4 +1,6 @@
 import argparse
+import os
+import yaml
 from dns_manager import DNSManager
 from vcenter_connector import vCenterConnector
 from vm_manager import VMManager
@@ -103,30 +105,6 @@ def main():
     list_luns_parser = storage_subparsers.add_parser('list_luns', help='List all LUNs')
     list_luns_parser.add_argument('array_name', help='Name of the storage array')
 
-    # Harvester Management Parser
-    harvester_parser = subparsers.add_parser('hrv', help='Harvester HCI management commands')
-    harvester_subparsers = harvester_parser.add_subparsers(dest='command', required=True)
-
-    # Harvester Create VM Command
-    create_parser = harvester_subparsers.add_parser('create', help='Create a VM from profile')
-    create_parser.add_argument('profile_name', help='Name of the profile to create VM')
-    create_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
-
-    # Harvester Delete VM Command
-    delete_parser = harvester_subparsers.add_parser('delete', help='Delete VM')
-    delete_parser.add_argument('vm_name', help='Name of the VM to delete')
-    delete_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
-
-    # Harvester List VMs Command
-    list_parser = harvester_subparsers.add_parser('list', help='List all VMs')
-    list_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
-
-    # Harvester Modify VM Command
-    modify_parser = harvester_subparsers.add_parser('modify', help='Modify an existing VM')
-    modify_parser.add_argument('vm_name', help='Name of the VM to modify')
-    modify_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
-    modify_parser.add_argument('modifications', help='Modifications to apply in YAML format')
-    
     args = parser.parse_args()
 
     if args.tool == 'dns':
@@ -180,8 +158,8 @@ def main():
             storage_manager.list_hosts(args.array_name)
         elif args.command == 'list_luns':
             storage_manager.list_luns(args.array_name)
-            
-    if args.tool == 'hrv':
+
+    elif args.tool == 'hrv':
         harvester_manager = HarvesterManager(config_path="hypervisor_configs/harvester")
 
         if args.command == 'create':
@@ -194,8 +172,10 @@ def main():
         elif args.command == 'list':
             harvester_manager.list_vms(args.cluster_name)
         elif args.command == 'modify':
-            modifications = yaml.safe_load(args.modifications)
-            harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
-            
+            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
+            with open(profile_path, 'r') as f:
+                profile = yaml.safe_load(f)
+            harvester_manager.modify_vm(args.cluster_name, args.vm_name, profile)
+
 if __name__ == '__main__':
     main()
