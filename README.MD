@@ -184,30 +184,35 @@ python fscli.py one modify <vm_id> <profile_name> <cluster_name>
 
 **Create LUN**
 ```sh
-python fscli.py storage create_lun <purestorage_name> <volume-name> 100G
+python fscli.py storage create_lun <array_name> <volume_name> <size>
 ```
 
 **Create Host**
 ```sh
-python fscli.py storage create_host <purestorage_name> <host_name>
+python fscli.py storage create_host <array_name> <host_name> --iqn <iqn> --wwns <wwn1> <wwn2>
+```
+
+**Add Initiator to Host**
+```sh
+python fscli.py storage add_initiator <array_name> <host_name> <initiator_name> <initiator_type>
 ```
 
 **Map Volume to Host**
 ```sh
-python fscli.py storage map_volume <purestorage_name> <volume-name> <host_name>
+python fscli.py storage map_volume <array_name> <volume-name> <host_name>
 ```
 
 **Take Snapshot of LUN**
 ```sh
-python fscli.py storage snapshot_lun <purestorage_name> <volume-name> <snapshot-name>
+python fscli.py storage snapshot_lun <array_name> <volume-name> <snapshot-name>
 ```
 
-**List Hosts**
+**List All Hosts**
 ```sh
-python fscli.py storage list_hosts <purestorage_name>
+python fscli.py storage list_hosts <array_name>
 ```
 
-**List LUNs**
+**List All LUNs**
 ```sh
-python fscli.py storage list_luns <purestorage_name>
+python fscli.py storage list_luns <array_name>
 ```
