@@ -105,7 +105,7 @@ def main():
     args = parser.parse_args()
 
     if args.tool == 'dns':
-        dns_manager = DNSManager(config_path="c:/Users/Fatih/Documents/My Codes/infracli/dnsserver_configs")
+        dns_manager = DNSManager(config_path="dnsserver_configs")
         dns_server = dns_manager.get_dns_server(args.domain)
         if not dns_server:
             print(f"DNS server not found for domain {args.domain}")
@@ -121,9 +121,9 @@ def main():
             dns_manager.list_dns_records(args.domain)
 
     elif args.tool == 'vm':
-        vcenter_connector = vCenterConnector(config_path="c:/Users/Fatih/Documents/My Codes/infracli/hypervisor_configs/vmware")
+        vcenter_connector = vCenterConnector(config_path="hypervisor_configs/vmware")
         if vcenter_connector.connect(args.vcenter_name):
-            vm_manager = VMManager(vcenter_connector.service_instance, "c:/Users/Fatih/Documents/My Codes/infracli/vm_profiles")
+            vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
 
             if args.command == 'create':
                 vm_manager.create_vm(args.profile_name)
@@ -141,7 +141,7 @@ def main():
             print("Failed to connect to vCenter")
 
     elif args.tool == 'storage':
-        storage_manager = StorageManager(config_path="c:/Users/Fatih/Documents/My Codes/infracli/storage_configs")
+        storage_manager = StorageManager(config_path="storage_configs")
 
         if args.command == 'create_lun':
             storage_manager.create_lun(args.array_name, args.volume_name, args.size)
