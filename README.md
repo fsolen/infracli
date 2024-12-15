@@ -2,9 +2,9 @@
 https://fatihsolen.com
 https://www.linkedin.com/in/fatihsolen/
 
-InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
+InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware and Harvester virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
 
-Suse Harvester / Openshift Virtualization (Kubevirt) -plus may be OpenNebula- supports under dev. 
+Openshift Virtualization (Kubevirt) -plus may be OpenNebula- supports under dev. 
 Vault integration for authentication tokens under dev.
 
 #  Do not use in production yet! 
@@ -13,7 +13,7 @@ Vault integration for authentication tokens under dev.
 
 1. Clone the repository:
 	```sh
-	git clone https://github.com/yourusername/infracli.git
+	git clone https://github.com/fsolen/infracli.git
 	cd infracli
 	```
 
