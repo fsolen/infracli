@@ -26,11 +26,28 @@ class StorageManager:
         else:
             print(f"Array {array_name} not found.")
 
-    def create_host(self, array_name, host_name):
+    def create_host(self, array_name, host_name, iqn=None, wwns=None):
         array = self.arrays.get(array_name)
         if array:
-            array.create_host(host_name)
-            print(f"Host {host_name} created on {array_name}.")
+            if iqn or (wwns and len(wwns) >= 2):
+                array.create_host(host_name, iqnlist=[iqn] if iqn else None, wwnlist=wwns if wwns else None)
+                print(f"Host {host_name} created on {array_name} with IQN {iqn} and WWNs {wwns}.")
+            else:
+                print("Host must have an IQN or at least two WWNs.")
+        else:
+            print(f"Array {array_name} not found.")
+
+    def add_initiator_to_host(self, array_name, host_name, initiator_name, initiator_type):
+        array = self.arrays.get(array_name)
+        if array:
+            if initiator_type == 'iqn':
+                array.set_host(host_name, iqnlist=[initiator_name])
+                print(f"IQN {initiator_name} added to host {host_name} on {array_name}.")
+            elif initiator_type == 'wwn':
+                array.set_host(host_name, wwnlist=[initiator_name])
+                print(f"WWN {initiator_name} added to host {host_name} on {array_name}.")
+            else:
+                print(f"Invalid initiator type: {initiator_type}. Must be 'iqn' or 'wwn'.")
         else:
             print(f"Array {array_name} not found.")
 
@@ -54,24 +71,14 @@ class StorageManager:
         array = self.arrays.get(array_name)
         if array:
             hosts = array.list_hosts()
-            print(tabulate(hosts, headers="keys", tablefmt="grid"))
+            print(tabulate(hosts, headers="keys"))
         else:
             print(f"Array {array_name} not found.")
 
     def list_luns(self, array_name):
         array = self.arrays.get(array_name)
         if array:
-            volumes = array.list_volumes()
-            mappings = array.list_host_connections()
-            volume_table = []
-            for volume in volumes:
-                volume_name = volume['name']
-                mapped_hosts = [mapping['host'] for mapping in mappings if mapping['vol'] == volume_name]
-                volume_table.append({
-                    'Volume Name': volume_name,
-                    'Size': volume['size'],
-                    'Mapped Hosts': ', '.join(mapped_hosts) if mapped_hosts else 'None'
-                })
-            print(tabulate(volume_table, headers="keys", tablefmt="grid"))
+            luns = array.list_volumes()
+            print(tabulate(luns, headers="keys"))
         else:
             print(f"Array {array_name} not found.")
