@@ -1,10 +1,17 @@
 import argparse
+import os
+import yaml
 from dns_manager import DNSManager
 from vcenter_connector import vCenterConnector
 from vm_manager import VMManager
 from storage_manager import StorageManager
 from harvester_manager import HarvesterManager
 from opennebula_manager import OpenNebulaManager
+
+def load_profile(profile_name):
+    profile_path = os.path.join("vm_profiles", f"{profile_name}.yaml")
+    with open(profile_path, 'r') as f:
+        return yaml.safe_load(f)
 
 def main():
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
@@ -154,91 +161,88 @@ def main():
     
     args = parser.parse_args()
 
-    if args.tool == 'dns':
-        dns_manager = DNSManager(config_path="dnsserver_configs")
-        dns_server = dns_manager.get_dns_server(args.domain)
-        if not dns_server:
-            print(f"DNS server not found for domain {args.domain}")
-            return
+    try:
+        if args.tool == 'dns':
+            dns_manager = DNSManager(config_path="dnsserver_configs")
+            dns_server = dns_manager.get_dns_server(args.domain)
+            if not dns_server:
+                print(f"DNS server not found for domain {args.domain}")
+                return
 
-        if args.command == 'get':
-            dns_manager.get_dns_record(args.record_type, args.name, dns_server)
-        elif args.command == 'add':
-            dns_manager.add_dns_record(args.record_type, args.name, args.value, args.ttl, dns_server, args.priority)
-        elif args.command == 'del':
-            dns_manager.del_dns_record(args.record_type, args.name, args.value, dns_server)
-        elif args.command == 'list':
-            dns_manager.list_dns_records(args.domain)
+            if args.command == 'get':
+                dns_manager.get_dns_record(args.record_type, args.name, dns_server)
+            elif args.command == 'add':
+                dns_manager.add_dns_record(args.record_type, args.name, args.value, args.ttl, dns_server, args.priority)
+            elif args.command == 'del':
+                dns_manager.del_dns_record(args.record_type, args.name, args.value, dns_server)
+            elif args.command == 'list':
+                dns_manager.list_dns_records(args.domain)
 
-    elif args.tool == 'vm':
-        vcenter_connector = vCenterConnector(config_path="hypervisor_configs/vmware")
-        if vcenter_connector.connect(args.vcenter_name):
-            vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
+        elif args.tool == 'vm':
+            vcenter_connector = vCenterConnector(config_path="hypervisor_configs/vmware")
+            if vcenter_connector.connect(args.vcenter_name):
+                vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
+
+                if args.command == 'create':
+                    vm_manager.create_vm(args.profile_name)
+                elif args.command == 'delete':
+                    vm_manager.delete_vm(args.vm_name)
+                elif args.command == 'list':
+                    vm_manager.list_vms()
+                elif args.command == 'snapshot':
+                    vm_manager.create_snapshot(args.vm_name)
+                elif args.command == 'modify':
+                    vm_manager.modify_vm(args.vm_name, args.profile_name)
+
+                vcenter_connector.disconnect()
+            else:
+                print("Failed to connect to vCenter")
+
+        elif args.tool == 'storage':
+            storage_manager = StorageManager(config_path="storage_configs")
+
+            if args.command == 'create_lun':
+                storage_manager.create_lun(args.array_name, args.volume_name, args.size)
+            elif args.command == 'create_host':
+                storage_manager.create_host(args.array_name, args.host_name)
+            elif args.command == 'map_volume':
+                storage_manager.map_volume_to_host(args.array_name, args.volume_name, args.host_name)
+            elif args.command == 'snapshot_lun':
+                storage_manager.take_snapshot(args.array_name, args.volume_name, args.snapshot_name)
+            elif args.command == 'list_hosts':
+                storage_manager.list_hosts(args.array_name)
+            elif args.command == 'list_luns':
+                storage_manager.list_luns(args.array_name)
+                
+        elif args.tool == 'hrv':
+            harvester_manager = HarvesterManager(config_path="hypervisor_configs/harvester")
 
             if args.command == 'create':
-                vm_manager.create_vm(args.profile_name)
+                profile = load_profile(args.profile_name)
+                harvester_manager.create_vm(args.cluster_name, profile)
             elif args.command == 'delete':
-                vm_manager.delete_vm(args.vm_name)
+                harvester_manager.delete_vm(args.cluster_name, args.vm_name)
             elif args.command == 'list':
-                vm_manager.list_vms()
-            elif args.command == 'snapshot':
-                vm_manager.create_snapshot(args.vm_name)
+                harvester_manager.list_vms(args.cluster_name)
             elif args.command == 'modify':
-                vm_manager.modify_vm(args.vm_name, args.profile_name)
+                modifications = yaml.safe_load(args.modifications)
+                harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
 
-            vcenter_connector.disconnect()
-        else:
-            print("Failed to connect to vCenter")
+        elif args.tool == 'one':
+            opennebula_manager = OpenNebulaManager(config_path="hypervisor_configs/opennebula")
 
-    elif args.tool == 'storage':
-        storage_manager = StorageManager(config_path="storage_configs")
+            if args.command == 'create':
+                profile = load_profile(args.profile_name)
+                opennebula_manager.create_vm(args.cluster_name, profile)
+            elif args.command == 'delete':
+                opennebula_manager.delete_vm(args.cluster_name, args.vm_id)
+            elif args.command == 'list':
+                opennebula_manager.list_vms(args.cluster_name)
+            elif args.command == 'modify':
+                profile = load_profile(args.profile_name)
+                opennebula_manager.modify_vm(args.cluster_name, args.vm_id, profile)
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
 
-        if args.command == 'create_lun':
-            storage_manager.create_lun(args.array_name, args.volume_name, args.size)
-        elif args.command == 'create_host':
-            storage_manager.create_host(args.array_name, args.host_name)
-        elif args.command == 'map_volume':
-            storage_manager.map_volume_to_host(args.array_name, args.volume_name, args.host_name)
-        elif args.command == 'snapshot_lun':
-            storage_manager.take_snapshot(args.array_name, args.volume_name, args.snapshot_name)
-        elif args.command == 'list_hosts':
-            storage_manager.list_hosts(args.array_name)
-        elif args.command == 'list_luns':
-            storage_manager.list_luns(args.array_name)
-            
-    elif args.tool == 'hrv':
-        harvester_manager = HarvesterManager(config_path="hypervisor_configs/harvester")
-
-        if args.command == 'create':
-            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
-            with open(profile_path, 'r') as f:
-                profile = yaml.safe_load(f)
-            harvester_manager.create_vm(args.cluster_name, profile)
-        elif args.command == 'delete':
-            harvester_manager.delete_vm(args.cluster_name, args.vm_name)
-        elif args.command == 'list':
-            harvester_manager.list_vms(args.cluster_name)
-        elif args.command == 'modify':
-            modifications = yaml.safe_load(args.modifications)
-            harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
-
-    elif args.tool == 'one':
-        opennebula_manager = OpenNebulaManager(config_path="hypervisor_configs/opennebula")
-
-        if args.command == 'create':
-            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
-            with open(profile_path, 'r') as f:
-                profile = yaml.safe_load(f)
-            opennebula_manager.create_vm(args.cluster_name, profile)
-        elif args.command == 'delete':
-            opennebula_manager.delete_vm(args.cluster_name, args.vm_id)
-        elif args.command == 'list':
-            opennebula_manager.list_vms(args.cluster_name)
-        elif args.command == 'modify':
-            profile_path = os.path.join("vm_profiles", f"{args.profile_name}.yaml")
-            with open(profile_path, 'r') as f:
-                profile = yaml.safe_load(f)
-            opennebula_manager.modify_vm(args.cluster_name, args.vm_id, profile)
-            
 if __name__ == '__main__':
     main()
