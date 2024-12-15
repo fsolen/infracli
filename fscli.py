@@ -121,6 +121,12 @@ def main():
     list_parser = harvester_subparsers.add_parser('list', help='List all VMs')
     list_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
 
+    # Harvester Modify VM Command
+    modify_parser = harvester_subparsers.add_parser('modify', help='Modify an existing VM')
+    modify_parser.add_argument('vm_name', help='Name of the VM to modify')
+    modify_parser.add_argument('cluster_name', help='Name of the Harvester cluster configuration')
+    modify_parser.add_argument('modifications', help='Modifications to apply in YAML format')
+    
     args = parser.parse_args()
 
     if args.tool == 'dns':
@@ -187,6 +193,9 @@ def main():
             harvester_manager.delete_vm(args.cluster_name, args.vm_name)
         elif args.command == 'list':
             harvester_manager.list_vms(args.cluster_name)
+        elif args.command == 'modify':
+            modifications = yaml.safe_load(args.modifications)
+            harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
             
 if __name__ == '__main__':
     main()
