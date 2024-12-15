@@ -76,6 +76,7 @@ network: default
 
 **Get DNS Record**
 ```sh
+python fscli.py dns get <dns-record-type> <dns-record> <dns-server-name>
 python fscli.py dns get A example.fatihsolen.com fatihsolen_com
 python fscli.py dns get CNAME alias.fatihsolen.com fatihsolen_com
 python fscli.py dns get PTR 123.123.123.123 fatihsolen_com
@@ -85,6 +86,7 @@ python fscli.py dns get MX example.fatihsolen.com fatihsolen_com
 
 **Add DNS Record**
 ```sh
+python fscli.py dns add <dns-record-type> <dns-record> <record-value> [ttl-value] [priority(only for MX records)] <dns-server-name>
 python fscli.py dns add A example.fatihsolen.com 192.168.1.1 --ttl 3600 fatihsolen_com
 python fscli.py dns add CNAME alias.fatihsolen.com example.fatihsolen.com --ttl 3600 fatihsolen_com
 python fscli.py dns add TXT example.fatihsolen.com "v=spf1 include:fatihsolen.com ~all" --ttl 3600 fatihsolen_com
@@ -93,6 +95,7 @@ python fscli.py dns add MX example.fatihsolen.com mail.example.com --ttl 3600 --
 
 **Delete DNS Record**
 ```sh
+python fscli.py dns del <dns-record-type> <dns-record> <record-value> <dns-server-name>
 python fscli.py dns del A example.fatihsolen.com 192.168.1.1 fatihsolen_com
 python fscli.py dns del CNAME alias.fatihsolen.com example.fatihsolen.com fatihsolen_com
 python fscli.py dns del TXT example.fatihsolen.com "v=spf1 include:example.com ~all" fatihsolen_com
@@ -101,6 +104,7 @@ python fscli.py dns del MX example.fatihsolen.com mail.example.com fatihsolen_co
 
 **List DNS Records**
 ```sh
+python fscli.py dns list <dns-server-name>
 python fscli.py dns list fatihsolen_com
 ```
 
