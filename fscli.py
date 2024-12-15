@@ -90,6 +90,15 @@ def main():
     create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
     create_host_parser.add_argument('array_name', help='Name of the storage array')
     create_host_parser.add_argument('host_name', help='Name of the host')
+    create_host_parser.add_argument('--iqn', help='IQN of the host', required=False)
+    create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', required=False)
+
+    # Storage Add Initiator Command
+    add_initiator_parser = storage_subparsers.add_parser('add_initiator', help='Add initiator to host')
+    add_initiator_parser.add_argument('array_name', help='Name of the storage array')
+    add_initiator_parser.add_argument('host_name', help='Name of the host')
+    add_initiator_parser.add_argument('initiator_name', help='Name of the initiator (IQN or WWN)')
+    add_initiator_parser.add_argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
 
     # Storage Map Volume to Host Command
     map_volume_parser = storage_subparsers.add_parser('map_volume', help='Map volume to host')
@@ -204,7 +213,9 @@ def main():
             if args.command == 'create_lun':
                 storage_manager.create_lun(args.array_name, args.volume_name, args.size)
             elif args.command == 'create_host':
-                storage_manager.create_host(args.array_name, args.host_name)
+                storage_manager.create_host(args.array_name, args.host_name, args.iqn, args.wwns)
+            elif args.command == 'add_initiator':
+                storage_manager.add_initiator_to_host(args.array_name, args.host_name, args.initiator_name, args.initiator_type)
             elif args.command == 'map_volume':
                 storage_manager.map_volume_to_host(args.array_name, args.volume_name, args.host_name)
             elif args.command == 'snapshot_lun':
