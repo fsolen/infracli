@@ -1,6 +1,5 @@
 import os
 import yaml
-import requests
 from xmlrpc.client import ServerProxy
 
 class OpenNebulaManager:
@@ -21,16 +20,22 @@ class OpenNebulaManager:
     def get_cluster_config(self, cluster_name):
         return self.clusters.get(cluster_name)
 
-    def create_vm(self, cluster_name, profile):
+    def get_server_proxy(self, cluster_name):
         config = self.get_cluster_config(cluster_name)
         if not config:
             print(f"Cluster configuration for {cluster_name} not found.")
-            return
+            return None, None, None
 
         api_url = config['opennebula_api_url']
         username = config['opennebula_username']
         password = config['opennebula_password']
         server = ServerProxy(api_url)
+        return server, username, password
+
+    def create_vm(self, cluster_name, profile):
+        server, username, password = self.get_server_proxy(cluster_name)
+        if not server:
+            return
 
         # Create VM payload from profile
         template = f"""
@@ -58,15 +63,9 @@ class OpenNebulaManager:
             print(f"Error: {e}")
 
     def delete_vm(self, cluster_name, vm_id):
-        config = self.get_cluster_config(cluster_name)
-        if not config:
-            print(f"Cluster configuration for {cluster_name} not found.")
+        server, username, password = self.get_server_proxy(cluster_name)
+        if not server:
             return
-
-        api_url = config['opennebula_api_url']
-        username = config['opennebula_username']
-        password = config['opennebula_password']
-        server = ServerProxy(api_url)
 
         try:
             response = server.one.vm.action(username + ":" + password, "terminate", int(vm_id))
@@ -78,15 +77,9 @@ class OpenNebulaManager:
             print(f"Error: {e}")
 
     def list_vms(self, cluster_name):
-        config = self.get_cluster_config(cluster_name)
-        if not config:
-            print(f"Cluster configuration for {cluster_name} not found.")
+        server, username, password = self.get_server_proxy(cluster_name)
+        if not server:
             return
-
-        api_url = config['opennebula_api_url']
-        username = config['opennebula_username']
-        password = config['opennebula_password']
-        server = ServerProxy(api_url)
 
         try:
             response = server.one.vmpool.info(username + ":" + password, -2, -1, -1, -1)
@@ -100,15 +93,9 @@ class OpenNebulaManager:
             print(f"Error: {e}")
 
     def modify_vm(self, cluster_name, vm_id, profile):
-        config = self.get_cluster_config(cluster_name)
-        if not config:
-            print(f"Cluster configuration for {cluster_name} not found.")
+        server, username, password = self.get_server_proxy(cluster_name)
+        if not server:
             return
-
-        api_url = config['opennebula_api_url']
-        username = config['opennebula_username']
-        password = config['opennebula_password']
-        server = ServerProxy(api_url)
 
         # Modify VM payload from profile
         template = f"""
