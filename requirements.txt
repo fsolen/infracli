@@ -1,0 +1,5 @@
+pyvmomi
+pyyaml
+purestorage
+tabulate
+pywinrm
