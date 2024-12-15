@@ -86,6 +86,8 @@ python fscli.py dns list domain1
 
 ### VM Management
 
+#### VMware
+
 **Create VM**
 ```sh
 python fscli.py vm create web_server vcenter01
@@ -109,6 +111,22 @@ python fscli.py vm snapshot web_server_01 vcenter01
 **Modify VM**
 ```sh
 python fscli.py vm modify web_server_01 web_server vcenter01
+```
+
+#### Harvester
+**Create VM**
+```sh
+python fscli.py hrv create web_server harvester01
+```
+
+**Delete VM**
+```sh
+python fscli.py hrv delete web_server_01 harvester01
+```
+
+**List VMs**
+```sh
+python fscli.py hrv list harvester01
 ```
 
 ### Storage Management
