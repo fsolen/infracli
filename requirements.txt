@@ -4,3 +4,4 @@ purestorage
 tabulate
 pywinrm
 requests
+cs
