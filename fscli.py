@@ -62,80 +62,80 @@ def main():
     list_parser = dns_subparsers.add_parser('list', help='List all DNS records')
     list_parser.add_argument('domain', help='Domain name to get DNS server address')
 
-    # VM Management Parser
+    # vSphere Management Parser
     vm_parser = subparsers.add_parser('vm', help='VM management commands')
     vm_subparsers = vm_parser.add_subparsers(dest='command', required=True)
 
-    # VM Create Command
+    # vSphere Create Command
     create_parser = vm_subparsers.add_parser('create', help='Create a VM from template')
     create_parser.add_argument('profile_name', help='Name of the profile to create VM')
     create_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # VM Delete Command
+    # vSphere Delete Command
     delete_parser = vm_subparsers.add_parser('delete', help='Delete VM')
     delete_parser.add_argument('vm_name', help='Name of the VM to delete')
     delete_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # VM List Command
+    # vSphere List Command
     list_parser = vm_subparsers.add_parser('list', help='List all VMs')
     list_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # VM Snapshot Command
+    # vSphere Snapshot Command
     snapshot_parser = vm_subparsers.add_parser('snapshot', help='Create VM snapshot')
     snapshot_parser.add_argument('vm_name', help='Name of the VM to snapshot')
     snapshot_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # VM Modify Command
+    # vSphere Modify Command
     modify_parser = vm_subparsers.add_parser('modify', help='Modify existing VM')
     modify_parser.add_argument('vm_name', help='Name of the VM to modify')
     modify_parser.add_argument('profile_name', help='Profile name for modification')
     modify_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # Storage Management Parser
+    # Pure FlashArray Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
     storage_subparsers = storage_parser.add_subparsers(dest='command', required=True)
 
-    # Storage Create LUN Command
+    # Pure FlashArray Create LUN Command
     create_lun_parser = storage_subparsers.add_parser('create_lun', help='Create a LUN')
     create_lun_parser.add_argument('array_name', help='Name of the storage array')
     create_lun_parser.add_argument('volume_name', help='Name of the volume')
     create_lun_parser.add_argument('size', help='Size of the volume')
 
-    # Storage Create Host Command
+    # Pure FlashArray Create Host Command
     create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
     create_host_parser.add_argument('array_name', help='Name of the storage array')
     create_host_parser.add_argument('host_name', help='Name of the host')
     create_host_parser.add_argument('--iqn', help='IQN of the host', default=None)
     create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', default=None)
 
-    # Storage Add Initiator Command
+    # Pure FlashArray Add Initiator Command
     add_initiator_parser = storage_subparsers.add_parser('add_initiator', help='Add initiator to host')
     add_initiator_parser.add_argument('array_name', help='Name of the storage array')
     add_initiator_parser.add_argument('host_name', help='Name of the host')
     add_initiator_parser.add_argument('initiator_name', help='Name of the initiator')
     add_initiator_parser.add_argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
 
-    # Storage Map Volume to Host Command
+    # Pure FlashArray Map Volume to Host Command
     map_volume_parser = storage_subparsers.add_parser('map_volume', help='Map volume to host')
     map_volume_parser.add_argument('array_name', help='Name of the storage array')
     map_volume_parser.add_argument('volume_name', help='Name of the volume')
     map_volume_parser.add_argument('host_name', help='Name of the host')
 
-    # Storage Take Snapshot Command
+    # Pure FlashArray Take Snapshot Command
     snapshot_lun_parser = storage_subparsers.add_parser('snapshot_lun', help='Take snapshot of a LUN')
     snapshot_lun_parser.add_argument('array_name', help='Name of the storage array')
     snapshot_lun_parser.add_argument('volume_name', help='Name of the volume')
     snapshot_lun_parser.add_argument('snapshot_name', help='Name of the snapshot')
 
-    # Storage List Hosts Command
+    # Pure FlashArray List Hosts Command
     list_hosts_parser = storage_subparsers.add_parser('list_hosts', help='List all hosts')
     list_hosts_parser.add_argument('array_name', help='Name of the storage array')
 
-    # Storage List LUNs Command
+    # Pure FlashArray List LUNs Command
     list_luns_parser = storage_subparsers.add_parser('list_luns', help='List all LUNs')
     list_luns_parser.add_argument('array_name', help='Name of the storage array')
 
-    # Storage List Host-LUN Mappings Command
+    # Pure FlashArray List Host-LUN Mappings Command
     list_host_lun_mappings_parser = storage_subparsers.add_parser('list_host_lun_mappings', help='List host-LUN mappings')
     list_host_lun_mappings_parser.add_argument('array_name', help='Name of the storage array')
 
