@@ -7,6 +7,7 @@ from managers.vmware_manager import VMManager
 from managers.purestorage_manager import StorageManager
 from managers.harvester_manager import HarvesterManager
 from managers.opennebula_manager import OpenNebulaManager
+from managers.cloudstack_manager import CloudStackManager
 
 def load_profile(profile_name):
     profile_path = os.path.join("vm_profiles", f"{profile_name}.yaml")
@@ -26,6 +27,7 @@ def main():
     vcenter_config_path = os.path.join(config_dir, "hypervisor_configs/vmware")
     harvester_config_path = os.path.join(config_dir, "hypervisor_configs/harvester")
     opennebula_config_path = os.path.join(config_dir, "hypervisor_configs/opennebula")
+    cloudstack_config_path = os.path.join(config_dir, "hypervisor_configs/cloudstack")
 
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
     subparsers = parser.add_subparsers(dest='tool', required=True)
@@ -184,6 +186,30 @@ def main():
     modify_parser.add_argument('vm_id', help='ID of the VM to modify')
     modify_parser.add_argument('profile_name', help='Name of the profile to use for modifications')
     modify_parser.add_argument('cluster_name', help='Name of the OpenNebula cluster configuration')
+
+    # CloudStack Management Parser
+    cloudstack_parser = subparsers.add_parser('aos', help='CloudStack management commands')
+    cloudstack_subparsers = cloudstack_parser.add_subparsers(dest='command', required=True)
+
+    # CloudStack Create VM Command
+    create_parser = cloudstack_subparsers.add_parser('create', help='Create a VM from profile')
+    create_parser.add_argument('profile_name', help='Name of the profile to create VM')
+    create_parser.add_argument('cluster_name', help='Name of the CloudStack cluster configuration')
+
+    # CloudStack Delete VM Command
+    delete_parser = cloudstack_subparsers.add_parser('delete', help='Delete VM')
+    delete_parser.add_argument('vm_id', help='ID of the VM to delete')
+    delete_parser.add_argument('cluster_name', help='Name of the CloudStack cluster configuration')
+
+    # CloudStack List VMs Command
+    list_parser = cloudstack_subparsers.add_parser('list', help='List all VMs')
+    list_parser.add_argument('cluster_name', help='Name of the CloudStack cluster configuration')
+
+    # CloudStack Modify VM Command
+    modify_parser = cloudstack_subparsers.add_parser('modify', help='Modify an existing VM')
+    modify_parser.add_argument('vm_id', help='ID of the VM to modify')
+    modify_parser.add_argument('profile_name', help='Name of the profile to use for modifications')
+    modify_parser.add_argument('cluster_name', help='Name of the CloudStack cluster configuration')
     
     args = parser.parse_args()
 
@@ -271,6 +297,21 @@ def main():
             elif args.command == 'modify':
                 profile = load_profile(args.profile_name)
                 opennebula_manager.modify_vm(args.cluster_name, args.vm_id, profile)
+
+        elif args.tool == 'aos':
+            cloudstack_manager = CloudStackManager(config_path=cloudstack_config_path)
+
+            if args.command == 'create':
+                profile = load_profile(args.profile_name)
+                cloudstack_manager.create_vm(args.cluster_name, profile)
+            elif args.command == 'delete':
+                cloudstack_manager.delete_vm(args.cluster_name, args.vm_id)
+            elif args.command == 'list':
+                cloudstack_manager.list_vms(args.cluster_name)
+            elif args.command == 'modify':
+                profile = load_profile(args.profile_name)
+                cloudstack_manager.modify_vm(args.cluster_name, args.vm_id, profile)
+
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
