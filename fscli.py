@@ -14,6 +14,19 @@ def load_profile(profile_name):
         return yaml.safe_load(f)
 
 def main():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    config_dir = os.path.join(script_dir, "configs")
+
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+        print(f"Created default config directory at {config_dir}")
+
+    storage_config_path = os.path.join(config_dir, "storage_configs")
+    dns_config_path = os.path.join(config_dir, "dnsserver_configs")
+    vcenter_config_path = os.path.join(config_dir, "hypervisor_configs/vmware")
+    harvester_config_path = os.path.join(config_dir, "hypervisor_configs/harvester")
+    opennebula_config_path = os.path.join(config_dir, "hypervisor_configs/opennebula")
+
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
     subparsers = parser.add_subparsers(dest='tool', required=True)
 
@@ -90,14 +103,14 @@ def main():
     create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
     create_host_parser.add_argument('array_name', help='Name of the storage array')
     create_host_parser.add_argument('host_name', help='Name of the host')
-    create_host_parser.add_argument('--iqn', help='IQN of the host', required=False)
-    create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', required=False)
+    create_host_parser.add_argument('--iqn', help='IQN of the host', default=None)
+    create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', default=None)
 
     # Storage Add Initiator Command
     add_initiator_parser = storage_subparsers.add_parser('add_initiator', help='Add initiator to host')
     add_initiator_parser.add_argument('array_name', help='Name of the storage array')
     add_initiator_parser.add_argument('host_name', help='Name of the host')
-    add_initiator_parser.add_argument('initiator_name', help='Name of the initiator (IQN or WWN)')
+    add_initiator_parser.add_argument('initiator_name', help='Name of the initiator')
     add_initiator_parser.add_argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
 
     # Storage Map Volume to Host Command
@@ -176,7 +189,7 @@ def main():
 
     try:
         if args.tool == 'dns':
-            dns_manager = DNSManager(config_path="manager_configs/dnsserver_configs")
+            dns_manager = DNSManager(config_path=dns_config_path)
             dns_server = dns_manager.get_dns_server(args.domain)
             if not dns_server:
                 print(f"DNS server not found for domain {args.domain}")
@@ -192,7 +205,7 @@ def main():
                 dns_manager.list_dns_records(args.domain)
 
         elif args.tool == 'vm':
-            vcenter_connector = vCenterConnector(config_path="manager_configs/hypervisor_configs/vmware")
+            vcenter_connector = vCenterConnector(config_path=vcenter_config_path)
             if vcenter_connector.connect(args.vcenter_name):
                 vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
 
@@ -212,7 +225,7 @@ def main():
                 print("Failed to connect to vCenter")
 
         elif args.tool == 'storage':
-            storage_manager = StorageManager(config_path="manager_configs/storage_configs")
+            storage_manager = StorageManager(config_path=storage_config_path)
 
             if args.command == 'create_lun':
                 storage_manager.create_lun(args.array_name, args.volume_name, args.size)
@@ -232,7 +245,7 @@ def main():
                 storage_manager.list_host_lun_mappings(args.array_name)
                 
         elif args.tool == 'hrv':
-            harvester_manager = HarvesterManager(config_path="manager_configs/hypervisor_configs/harvester")
+            harvester_manager = HarvesterManager(config_path=harvester_config_path)
 
             if args.command == 'create':
                 profile = load_profile(args.profile_name)
@@ -246,7 +259,7 @@ def main():
                 harvester_manager.modify_vm(args.cluster_name, args.vm_name, modifications)
 
         elif args.tool == 'one':
-            opennebula_manager = OpenNebulaManager(config_path="manager_configs/hypervisor_configs/opennebula")
+            opennebula_manager = OpenNebulaManager(config_path=opennebula_config_path)
 
             if args.command == 'create':
                 profile = load_profile(args.profile_name)
