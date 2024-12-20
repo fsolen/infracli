@@ -11,6 +11,8 @@ from managers.cloudstack_manager import CloudStackManager
 
 def load_profile(profile_name):
     profile_path = os.path.join("vm_profiles", f"{profile_name}.yaml")
+    if not os.path.exists(profile_path):
+        raise FileNotFoundError(f"Profile {profile_name} not found at {profile_path}")
     with open(profile_path, 'r') as f:
         return yaml.safe_load(f)
 
@@ -62,80 +64,80 @@ def main():
     list_parser = dns_subparsers.add_parser('list', help='List all DNS records')
     list_parser.add_argument('domain', help='Domain name to get DNS server address')
 
-    # vSphere Management Parser
+    # VM Management Parser
     vm_parser = subparsers.add_parser('vm', help='VM management commands')
     vm_subparsers = vm_parser.add_subparsers(dest='command', required=True)
 
-    # vSphere Create Command
+    # VM Create Command
     create_parser = vm_subparsers.add_parser('create', help='Create a VM from template')
     create_parser.add_argument('profile_name', help='Name of the profile to create VM')
     create_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # vSphere Delete Command
+    # VM Delete Command
     delete_parser = vm_subparsers.add_parser('delete', help='Delete VM')
     delete_parser.add_argument('vm_name', help='Name of the VM to delete')
     delete_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # vSphere List Command
+    # VM List Command
     list_parser = vm_subparsers.add_parser('list', help='List all VMs')
     list_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # vSphere Snapshot Command
+    # VM Snapshot Command
     snapshot_parser = vm_subparsers.add_parser('snapshot', help='Create VM snapshot')
     snapshot_parser.add_argument('vm_name', help='Name of the VM to snapshot')
     snapshot_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # vSphere Modify Command
+    # VM Modify Command
     modify_parser = vm_subparsers.add_parser('modify', help='Modify existing VM')
     modify_parser.add_argument('vm_name', help='Name of the VM to modify')
     modify_parser.add_argument('profile_name', help='Profile name for modification')
     modify_parser.add_argument('vcenter_name', help='Name of the vCenter configuration')
 
-    # Pure FlashArray Management Parser
+    # Storage Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
     storage_subparsers = storage_parser.add_subparsers(dest='command', required=True)
 
-    # Pure FlashArray Create LUN Command
+    # Storage Create LUN Command
     create_lun_parser = storage_subparsers.add_parser('create_lun', help='Create a LUN')
     create_lun_parser.add_argument('array_name', help='Name of the storage array')
     create_lun_parser.add_argument('volume_name', help='Name of the volume')
     create_lun_parser.add_argument('size', help='Size of the volume')
 
-    # Pure FlashArray Create Host Command
+    # Storage Create Host Command
     create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
     create_host_parser.add_argument('array_name', help='Name of the storage array')
     create_host_parser.add_argument('host_name', help='Name of the host')
     create_host_parser.add_argument('--iqn', help='IQN of the host', default=None)
     create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', default=None)
 
-    # Pure FlashArray Add Initiator Command
+    # Storage Add Initiator Command
     add_initiator_parser = storage_subparsers.add_parser('add_initiator', help='Add initiator to host')
     add_initiator_parser.add_argument('array_name', help='Name of the storage array')
     add_initiator_parser.add_argument('host_name', help='Name of the host')
     add_initiator_parser.add_argument('initiator_name', help='Name of the initiator')
     add_initiator_parser.add_argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
 
-    # Pure FlashArray Map Volume to Host Command
+    # Storage Map Volume to Host Command
     map_volume_parser = storage_subparsers.add_parser('map_volume', help='Map volume to host')
     map_volume_parser.add_argument('array_name', help='Name of the storage array')
     map_volume_parser.add_argument('volume_name', help='Name of the volume')
     map_volume_parser.add_argument('host_name', help='Name of the host')
 
-    # Pure FlashArray Take Snapshot Command
+    # Storage Take Snapshot Command
     snapshot_lun_parser = storage_subparsers.add_parser('snapshot_lun', help='Take snapshot of a LUN')
     snapshot_lun_parser.add_argument('array_name', help='Name of the storage array')
     snapshot_lun_parser.add_argument('volume_name', help='Name of the volume')
     snapshot_lun_parser.add_argument('snapshot_name', help='Name of the snapshot')
 
-    # Pure FlashArray List Hosts Command
+    # Storage List Hosts Command
     list_hosts_parser = storage_subparsers.add_parser('list_hosts', help='List all hosts')
     list_hosts_parser.add_argument('array_name', help='Name of the storage array')
 
-    # Pure FlashArray List LUNs Command
+    # Storage List LUNs Command
     list_luns_parser = storage_subparsers.add_parser('list_luns', help='List all LUNs')
     list_luns_parser.add_argument('array_name', help='Name of the storage array')
 
-    # Pure FlashArray List Host-LUN Mappings Command
+    # Storage List Host-LUN Mappings Command
     list_host_lun_mappings_parser = storage_subparsers.add_parser('list_host_lun_mappings', help='List host-LUN mappings')
     list_host_lun_mappings_parser.add_argument('array_name', help='Name of the storage array')
 
@@ -236,6 +238,7 @@ def main():
                 vm_manager = VMManager(vcenter_connector.service_instance, "vm_profiles")
 
                 if args.command == 'create':
+                    profile = load_profile(args.profile_name)
                     vm_manager.create_vm(args.profile_name)
                 elif args.command == 'delete':
                     vm_manager.delete_vm(args.vm_name)
@@ -244,6 +247,7 @@ def main():
                 elif args.command == 'snapshot':
                     vm_manager.create_snapshot(args.vm_name)
                 elif args.command == 'modify':
+                    profile = load_profile(args.profile_name)
                     vm_manager.modify_vm(args.vm_name, args.profile_name)
 
                 vcenter_connector.disconnect()
