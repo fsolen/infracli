@@ -6,6 +6,7 @@ class CloudStackManager:
     def __init__(self, config_path):
         self.config_path = config_path
         self.clusters = self.load_clusters()
+        self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
 
     def load_clusters(self):
         clusters = {}
@@ -15,18 +16,22 @@ class CloudStackManager:
                     config = yaml.safe_load(f)
                     cluster_name = os.path.splitext(filename)[0]
                     clusters[cluster_name] = CloudStack(endpoint=config['api_url'], key=config['api_key'], secret=config['secret_key'])
+                    self.vm_count[cluster_name] = 0  # Initialize VM count for the cluster
         return clusters
 
     def create_vm(self, cluster_name, profile):
         cluster = self.clusters.get(cluster_name)
         if cluster:
+            self.vm_count[cluster_name] += 1  # Increment VM count for the cluster
+            vm_index = self.vm_count[cluster_name]
+            vm_name = profile['hostname_pattern'].format(index=vm_index)
             vm_config = {
                 'serviceofferingid': profile['service_offering'],
                 'templateid': profile['template_name'],
                 'zoneid': profile['zone'],
                 'networkids': profile['network'],
-                'name': profile['hostname_pattern'].format(index=1),  # Example index, should be dynamically set
-                'displayname': profile['hostname_pattern'].format(index=1),
+                'name': vm_name,
+                'displayname': vm_name,
                 'cpu': profile['cpu'],
                 'memory': profile['memory'],
                 'disklist': [{'name': disk['name'], 'size': disk['size_gb']} for disk in profile['disks']],
