@@ -56,7 +56,9 @@ class OpenNebulaManager:
         vlan_name = vm_profile.get('vlan')
         if vlan_name:
             ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
-            return ip_address
+            subnet_id = self.phpipam_manager.get_subnet_id_by_vlan(vlan_name)
+            subnet_info = self.phpipam_manager.get_subnet_info(subnet_id)
+            return ip_address, subnet_info
         else:
             raise ValueError("VLAN not specified in vm_profile")
 
@@ -74,7 +76,7 @@ class OpenNebulaManager:
             return
 
         vm_name = profile['hostname_pattern'].format(index=1)  # Example index, should be dynamically set
-        ip_address = self.allocate_ip(profile)
+        ip_address, subnet_info = self.allocate_ip(profile)
         vm_template = f"""
         NAME = "{vm_name}"
         CPU = "{profile['cpu']}"
@@ -88,8 +90,8 @@ class OpenNebulaManager:
         CONTEXT = [
             HOSTNAME = "{vm_name}",
             IP = "{ip_address}",
-            NETMASK = "{profile['ip_settings']['subnet_mask']}",
-            GATEWAY = "{profile['ip_settings']['default_gateway']}",
+            NETMASK = "{subnet_info['subnetMask']}",
+            GATEWAY = "{subnet_info['gateway']}",
             DNS = "{', '.join(profile['ip_settings']['dns_servers'])}"
         ]
         """
