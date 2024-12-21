@@ -25,8 +25,8 @@ class HarvesterManager:
     def allocate_ip(self, vm_profile):
         vlan_name = vm_profile.get('vlan')
         if vlan_name:
-            ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
-            return ip_address
+            network_info = self.phpipam_manager.get_network_info(vlan_name)
+            return network_info
         else:
             raise ValueError("VLAN not specified in vm_profile")
 
@@ -40,8 +40,7 @@ class HarvesterManager:
         token = config['harvester_api_token']
         headers = {'Authorization': f'Bearer {token}'}
 
-        # Allocate IP address
-        ip_address = self.allocate_ip(profile)
+        network_info = self.allocate_ip(profile)
 
         # Create VM payload from profile
         payload = {
@@ -77,6 +76,15 @@ class HarvesterManager:
                             {
                                 "name": "default",
                                 "pod": {}
+                            }
+                        ],
+                        "interfaces": [
+                            {
+                                "name": "default",
+                                "ipAddress": network_info['ip_address'],
+                                "subnetMask": network_info['subnet_mask'],
+                                "gateway": network_info['gateway'],
+                                "dnsServers": network_info['dns_servers']
                             }
                         ]
                     }
