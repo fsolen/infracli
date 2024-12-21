@@ -35,7 +35,7 @@ class OpenNebulaManager:
         return server, username, password
 
     def validate_profile(self, profile):
-        required_fields = ['hostname_pattern', 'template_name', 'cpu', 'memory', 'disks', 'ip_settings']
+        required_fields = ['hostname_pattern', 'template_name', 'cpu', 'memory', 'disks']
         for field in required_fields:
             if field not in profile:
                 print(f"Profile validation failed: Missing required field '{field}'")
@@ -45,20 +45,13 @@ class OpenNebulaManager:
             print("Profile validation failed: 'disks' must be a list of dictionaries with 'name' and 'size_gb' keys")
             return False
 
-        ip_settings_fields = ['ip_address', 'subnet_mask', 'default_gateway', 'dns_servers']
-        if not all(field in profile['ip_settings'] for field in ip_settings_fields):
-            print(f"Profile validation failed: 'ip_settings' must contain {ip_settings_fields}")
-            return False
-
         return True
 
     def allocate_ip(self, vm_profile):
         vlan_name = vm_profile.get('vlan')
         if vlan_name:
-            ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
-            subnet_id = self.phpipam_manager.get_subnet_id_by_vlan(vlan_name)
-            subnet_info = self.phpipam_manager.get_subnet_info(subnet_id)
-            return ip_address, subnet_info
+            network_info = self.phpipam_manager.get_network_info(vlan_name)
+            return network_info
         else:
             raise ValueError("VLAN not specified in vm_profile")
 
@@ -76,7 +69,7 @@ class OpenNebulaManager:
             return
 
         vm_name = profile['hostname_pattern'].format(index=1)  # Example index, should be dynamically set
-        ip_address, subnet_info = self.allocate_ip(profile)
+        network_info = self.allocate_ip(profile)
         vm_template = f"""
         NAME = "{vm_name}"
         CPU = "{profile['cpu']}"
@@ -89,10 +82,10 @@ class OpenNebulaManager:
         ]
         CONTEXT = [
             HOSTNAME = "{vm_name}",
-            IP = "{ip_address}",
-            NETMASK = "{subnet_info['subnetMask']}",
-            GATEWAY = "{subnet_info['gateway']}",
-            DNS = "{', '.join(profile['ip_settings']['dns_servers'])}"
+            IP = "{network_info['ip_address']}",
+            NETMASK = "{network_info['subnet_mask']}",
+            GATEWAY = "{network_info['gateway']}",
+            DNS = "{', '.join(network_info['dns_servers'])}"
         ]
         """
 
@@ -143,6 +136,7 @@ class OpenNebulaManager:
         if not server:
             return
 
+        network_info = self.allocate_ip(profile)
         vm_template = f"""
         CPU = "{profile['cpu']}"
         MEMORY = "{profile['memory']}"
@@ -150,10 +144,10 @@ class OpenNebulaManager:
             {', '.join([f'NAME="{disk["name"]}", SIZE="{disk["size_gb"]}G"' for disk in profile['disks']])}
         ]
         CONTEXT = [
-            IP = "{profile['ip_settings']['ip_address']}",
-            NETMASK = "{profile['ip_settings']['subnet_mask']}",
-            GATEWAY = "{profile['ip_settings']['default_gateway']}",
-            DNS = "{', '.join(profile['ip_settings']['dns_servers'])}"
+            IP = "{network_info['ip_address']}",
+            NETMASK = "{network_info['subnet_mask']}",
+            GATEWAY = "{network_info['gateway']}",
+            DNS = "{', '.join(network_info['dns_servers'])}"
         ]
         """
 
