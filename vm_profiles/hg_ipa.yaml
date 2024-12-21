@@ -1,19 +1,10 @@
 hostname_pattern: ipa-{index}
 template_name: opensuse-leap-15-v1
-vlan: vlan101
-cpu: 2
-memory: 4096
+vlan: "vlan01"
+cpu: 4
+memory: 8192
 disks:
-  - name: Hard disk 1
-    size_gb: 90
-  - name: Hard disk 2
-    size_gb: 2
-  - name: Hard disk 3
-    size_gb: 3
-ip_settings:
-  ip_address: "10.101.0.198"
-  subnet_mask: "255.255.0.0"
-  default_gateway: "10.101.1.1"
-  dns_servers:
-    - "10.111.254.114"
-    - "10.111.254.115"
+  - name: "disk1"
+    size_gb: 50
+  - name: "disk2"
+    size_gb: 100
