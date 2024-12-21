@@ -93,6 +93,18 @@ Create storage configuration files in the "storage_configs" directory. Each file
 pure_fa_api_url: purefa01.fatihsolen.local
 pure_fa_api_token: **TOKEN**
 ```
+
+### Configuration for phpIPAM
+
+Create storage configuration files in the "ipam_configs" directory. Each file should be named after the phpipam and have the following format:
+```yaml
+phpipam:
+  base_url: "http://phpipam01.fatihsolen.local"
+  app_id: "app_id"
+  username: "username"
+  password: "password"
+```
+
 ### VM Host Group Profiles
 
 Create VM profile files in the "vm_profiles" directory. Each file should be named after the profile and have the following format:
