@@ -280,6 +280,5 @@ fscli.py
   - Update the README file with any new features or changes.
 
 Thank you for contributing to the Infracli project!
-```
 
 This `CONTRIBUTING.md` file provides a comprehensive guide for setting up the development environment, understanding the project structure, and contributing to the project. It also includes best practices for coding, error handling, and documentation.
