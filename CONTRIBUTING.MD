@@ -98,86 +98,38 @@ Thank you for considering contributing to the Infracli project! This guide will 
 
 ## VM Profiles
 
-- **Location**: 
-
-vm_profiles
-
-
+- **Location**: `vm_profiles/`
 - **Purpose**: Define VM configurations and templates.
 - **Structure**: YAML files containing VM profiles.
 
 ## Managers
 
-- **Location**: 
-
-managers
-
-
+- **Location**: `managers/`
 - **Purpose**: Contain classes and methods to manage different services.
 - **Files**:
-  - 
-
-msdns_manager.py
-
-: Manages DNS records.
-  - 
-
-vcenter_connector.py
-
-: Connects to VMware vCenter.
-  - 
-
-vmware_manager.py
-
-: Manages VMware VMs.
-  - 
-
-purestorage_manager.py
-
-: Manages PureStorage arrays.
-  - 
-
-harvester_manager.py
-
-: Manages Harvester VMs.
-  - 
-
-opennebula_manager.py
-
-: Manages OpenNebula VMs.
-  - 
-
-cloudstack_manager.py
-
-: Manages CloudStack VMs.
+  - `msdns_manager.py`: Manages DNS records.
+  - `vcenter_connector.py`: Connects to VMware vCenter.
+  - `vmware_manager.py`: Manages VMware VMs.
+  - `purestorage_manager.py`: Manages PureStorage arrays.
+  - `harvester_manager.py`: Manages Harvester VMs.
+  - `opennebula_manager.py`: Manages OpenNebula VMs.
+  - `cloudstack_manager.py`: Manages CloudStack VMs.
 
 ## Main Script
 
-- **Location**: 
-
-fscli.py
-
-
+- **Location**: `fscli.py`
 - **Purpose**: Entry point for the CLI tool.
 - **Functionality**: Parses command-line arguments and invokes appropriate manager methods.
 
 ## Adding a New Manager
 
 1. **Create a New Manager File**:
-   - Add a new file in the 
-
-managers
-
- directory, e.g., `new_manager.py`.
+   - Add a new file in the `managers` directory, e.g., `new_manager.py`.
 
 2. **Define the Manager Class**:
    - Implement the necessary methods for managing the new service.
 
-3. **Update 
-
-fscli.py
-
-**:
+3. **Update `fscli.py`**:
    - Import the new manager class.
    - Add command-line argument parsing for the new manager.
 
