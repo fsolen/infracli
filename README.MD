@@ -76,7 +76,16 @@ opennebula_username: username
 opennebula_password: password
 ```
 
-### Configuration for Pure Storage Arrays
+### Configuration for Apache Cloud Stack Clusters
+
+Create vCenter configuration files in the "hypervisor_configs/cloudstack" directory. Each file should be named after the "aos" and have the following format:
+```yaml
+  api_url: "https://cloudstack01.fatihsolen.local/client/api"
+  api_key: "your_api_key"
+  secret_key: "your_secret_key"
+```
+
+### Configuration for Pure Storage FlashArrays
 
 Create storage configuration files in the "storage_configs" directory. Each file should be named after the storage array and have the following format:
 ```yaml
