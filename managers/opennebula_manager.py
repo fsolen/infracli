@@ -1,11 +1,13 @@
 import os
 import yaml
 from xmlrpc.client import ServerProxy
+from .phpipam_manager import PhpIpamManager
 
 class OpenNebulaManager:
     def __init__(self, config_path):
         self.config_path = config_path
         self.clusters = self.load_clusters()
+        self.phpipam_manager = PhpIpamManager(config_path)
 
     def load_clusters(self):
         clusters = {}
@@ -50,6 +52,14 @@ class OpenNebulaManager:
 
         return True
 
+    def allocate_ip(self, vm_profile):
+        vlan_name = vm_profile.get('vlan')
+        if vlan_name:
+            ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
+            return ip_address
+        else:
+            raise ValueError("VLAN not specified in vm_profile")
+
     def create_vm(self, cluster_name, profile):
         if not self.validate_profile(profile):
             return
@@ -64,6 +74,7 @@ class OpenNebulaManager:
             return
 
         vm_name = profile['hostname_pattern'].format(index=1)  # Example index, should be dynamically set
+        ip_address = self.allocate_ip(profile)
         vm_template = f"""
         NAME = "{vm_name}"
         CPU = "{profile['cpu']}"
@@ -76,7 +87,7 @@ class OpenNebulaManager:
         ]
         CONTEXT = [
             HOSTNAME = "{vm_name}",
-            IP = "{profile['ip_settings']['ip_address']}",
+            IP = "{ip_address}",
             NETMASK = "{profile['ip_settings']['subnet_mask']}",
             GATEWAY = "{profile['ip_settings']['default_gateway']}",
             DNS = "{', '.join(profile['ip_settings']['dns_servers'])}"
