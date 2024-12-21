@@ -1,8 +1,5 @@
 The development guide file for GitHub is typically named `CONTRIBUTING.md`. This file provides guidelines for contributing to the project, including setting up the development environment, coding standards, and instructions for submitting pull requests.
 
-### Example `CONTRIBUTING.md`
-
-```markdown
 # Contributing to Infracli
 
 Thank you for considering contributing to the Infracli project! This guide will help you get started with setting up the development environment, understanding the project structure, and contributing code.
@@ -94,13 +91,7 @@ Thank you for considering contributing to the Infracli project! This guide will 
 
 - **Location**: `configs/`
 - **Purpose**: Store configurations for different services and environments.
-- **Structure**:
-  - 
-
-dnsserver_configs
-
-: DNS server configurations.
-  - 
+- **Structure**: -dnsserver_configs: DNS server configurations. - 
 
 hypervisor_configs
 
