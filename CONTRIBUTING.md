@@ -39,7 +39,7 @@ Thank you for considering contributing to the Infracli project! This guide will 
 ## Project Structure
 
 ```
-/c:/Users/Fatih/Documents/My Codes/infracli/
+infracli/
 ├── configs/
 │   ├── dnsserver_configs/
 │   │   ├── domain1_com.yaml
