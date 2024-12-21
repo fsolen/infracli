@@ -2,13 +2,18 @@
 https://fatihsolen.com
 https://www.linkedin.com/in/fatihsolen/
 
-InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware, Harvester and OpenNebula virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
+InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware, Harvester, OpenNebula and Cloud Stack virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
 
 ## Notes
 * Openshift Virtualization (Kubevirt) (Harvester HCI works well but Openshift Virtualization not tested yet)
-* OpenNebula supports added (Not fully tested yet)
+* OpenNebula supports added (Not fully tested)
+* Apache Cloud Stack support added (Not fully tested)
+
 ## Planned
 * Vault integration to secure authentication tokens
+
+## Not Planned
+* Proxmox support
 
 ##  Do not use in production yet! 
 
@@ -199,7 +204,28 @@ python fscli.py one list <cluster_name>
 python fscli.py one modify <vm_id> <profile_name> <cluster_name>
 ```
 
-### Storage Management
+#### Apache Cloud Stack
+**Create VM**
+```sh
+python fscli.py aos create <profile_name> <cluster_name>
+```
+
+**Delete VM**
+```sh
+python fscli.py aos delete <vm_id> <cluster_name>
+```
+
+**List VMs**
+```sh
+python fscli.py aos list <cluster_name>
+```
+
+**Modify VMs**
+```sh
+python fscli.py aos modify <vm_id> <profile_name> <cluster_name>
+```
+
+### Pure FlashArray Management
 
 **Create LUN**
 ```sh
