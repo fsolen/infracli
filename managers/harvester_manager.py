@@ -1,11 +1,13 @@
 import os
 import yaml
 import requests
+from .phpipam_manager import PhpIpamManager
 
 class HarvesterManager:
     def __init__(self, config_path):
         self.config_path = config_path
         self.clusters = self.load_clusters()
+        self.phpipam_manager = PhpIpamManager(config_path)
 
     def load_clusters(self):
         clusters = {}
@@ -20,6 +22,14 @@ class HarvesterManager:
     def get_cluster_config(self, cluster_name):
         return self.clusters.get(cluster_name)
 
+    def allocate_ip(self, vm_profile):
+        vlan_name = vm_profile.get('vlan')
+        if vlan_name:
+            ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
+            return ip_address
+        else:
+            raise ValueError("VLAN not specified in vm_profile")
+
     def create_vm(self, cluster_name, profile):
         config = self.get_cluster_config(cluster_name)
         if not config:
@@ -29,6 +39,9 @@ class HarvesterManager:
         api_url = config['harvester_api_url']
         token = config['harvester_api_token']
         headers = {'Authorization': f'Bearer {token}'}
+
+        # Allocate IP address
+        ip_address = self.allocate_ip(profile)
 
         # Create VM payload from profile
         payload = {
