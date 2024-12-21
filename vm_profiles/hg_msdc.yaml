@@ -1,6 +1,6 @@
 hostname_pattern: msdc-{index}
 template_name: win2022std-v1
-vlan: vlan101
+vlan: "vlan101"
 cpu: 2
 memory: 4096
 disks:
