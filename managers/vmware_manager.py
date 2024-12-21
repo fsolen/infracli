@@ -3,12 +3,14 @@ import ssl
 import yaml
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
+from .phpipam_manager import PhpIpamManager
 
 class VMManager:
-    def __init__(self, service_instance, profiles_path):
+    def __init__(self, service_instance, profiles_path, config_path):
         self.service_instance = service_instance
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
+        self.phpipam_manager = PhpIpamManager(config_path)
 
     def load_profiles(self):
         profiles = {}
@@ -61,6 +63,14 @@ class VMManager:
                 snapshot_names.extend(self.get_all_snapshots_names(snapshot.childSnapshotList))
         return snapshot_names
 
+    def allocate_ip(self, vm_profile):
+        vlan_name = vm_profile.get('vlan')
+        if vlan_name:
+            ip_address = self.phpipam_manager.get_next_available_ip(vlan_name)
+            return ip_address
+        else:
+            raise ValueError("VLAN not specified in vm_profile")
+
     def create_vm(self, profile_name):
         try:
             content = self.service_instance.RetrieveContent()
@@ -69,6 +79,8 @@ class VMManager:
             if not profile:
                 print("Profile not found:", profile_name)
                 return
+
+            ip_address = self.allocate_ip(profile)
 
             datacenter = content.rootFolder.childEntity[0]
             vm_folder = datacenter.vmFolder
