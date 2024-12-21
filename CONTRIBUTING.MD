@@ -91,16 +91,10 @@ Thank you for considering contributing to the Infracli project! This guide will 
 
 - **Location**: `configs/`
 - **Purpose**: Store configurations for different services and environments.
-- **Structure**: -dnsserver_configs: DNS server configurations. - 
-
-hypervisor_configs
-
-: Hypervisor configurations for VMware, Harvester, OpenNebula, and CloudStack.
-  - 
-
-storage_configs
-
-: Storage configurations for PureStorage arrays.
+- **Structure**:
+  - `dnsserver_configs/`: DNS server configurations.
+  - `hypervisor_configs/`: Hypervisor configurations for VMware, Harvester, OpenNebula, and CloudStack.
+  - `storage_configs/`: Storage configurations for PureStorage arrays.
 
 ## VM Profiles
 
