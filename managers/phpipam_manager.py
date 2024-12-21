@@ -35,3 +35,22 @@ class PhpIpamManager:
             if vlan['name'] == vlan_name:
                 return vlan['subnetId']
         raise ValueError(f"VLAN {vlan_name} not found")
+
+    def get_subnet_info(self, subnet_id):
+        url = f"{self.base_url}/api/{self.app_id}/subnets/{subnet_id}/"
+        headers = {'token': self.token}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()['data']
+
+    def get_network_info(self, vlan_name):
+        subnet_id = self.get_subnet_id_by_vlan(vlan_name)
+        ip_address = self.get_next_available_ip(vlan_name)
+        subnet_info = self.get_subnet_info(subnet_id)
+        network_info = {
+            'ip_address': ip_address,
+            'subnet_mask': subnet_info['mask'],
+            'gateway': subnet_info['gateway'],
+            'dns_servers': subnet_info['nameservers']
+        }
+        return network_info
