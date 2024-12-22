@@ -2,7 +2,7 @@
 https://fatihsolen.com
 https://www.linkedin.com/in/fatihsolen/
 
-InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware, Harvester, OpenNebula and Cloud Stack virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
+InfraCLI is a unified command-line tool for managing Microsoft DNS Server records, VMware, Harvester and Cloud Stack virtual machines (VMs) and PureStorage FLashArray// storage arrays. It provides functionalities to add, delete, list and modify DNS records, as well as to create, delete, list, snapshot and modify VMs and manage storage arrays for daily tasks. 
 
 ## Notes
 * Added PHPIPAM integration for getting next available IP, Subnet, Route and DNS information.
