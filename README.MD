@@ -108,10 +108,14 @@ sites:
 
 Create VM profile files in the "vm_profiles" directory. Each file should be named after the profile and have the following format:
 ```yaml
-# Example profile
+# Example profile manifest
 hostname_pattern: ipa-{index}
 template_name: opensuse-leap-15-v1
-vlan: "vlan01"
+networks:
+  - name: "net1"
+    vlan: "vlan101"
+  - name: "net2"
+    vlan: "vlan102"
 cpu: 4
 memory: 8192
 disks:
