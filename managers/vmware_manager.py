@@ -65,7 +65,7 @@ class VMManager:
                 snapshot_names.extend(self.get_all_snapshots_names(snapshot.childSnapshotList))
         return snapshot_names
 
-    def create_vm(self, profile_name):
+    def create_vm(self, cluster_name, profile_name):
         try:
             content = self.service_instance.RetrieveContent()
             profile = self.profiles.get(profile_name)
@@ -73,7 +73,7 @@ class VMManager:
             if not profile:
                 raise ValueError(f"Profile {profile_name} not found")
 
-            ip_address = self.allocate_ip(profile)
+            ip_address = self.phpipam_manager.get_next_available_ip(profile['vlan'])
 
             datacenter = content.rootFolder.childEntity[0]
             vm_folder = datacenter.vmFolder
