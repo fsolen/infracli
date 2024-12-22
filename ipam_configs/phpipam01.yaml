@@ -1,5 +1,0 @@
-phpipam:
-  base_url: "http://phpipam01.fatihsolen.local"
-  app_id: "app_id"
-  username: "username"
-  password: "password"
