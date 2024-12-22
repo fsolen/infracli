@@ -65,6 +65,13 @@ class VMManager:
                 snapshot_names.extend(self.get_all_snapshots_names(snapshot.childSnapshotList))
         return snapshot_names
 
+    def get_vm_by_name(self, vm_name, content):
+        vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
+        for vm in vm_list:
+            if vm.name == vm_name:
+                return vm
+        return None
+
     def create_vm(self, cluster_name, profile_name):
         try:
             content = self.service_instance.RetrieveContent()
@@ -73,7 +80,11 @@ class VMManager:
             if not profile:
                 raise ValueError(f"Profile {profile_name} not found")
 
-            ip_address = self.phpipam_manager.get_next_available_ip(profile['vlan'])
+            try:
+                ip_address = self.phpipam_manager.get_next_available_ip(profile['vlan'])
+            except Exception as e:
+                print(f"Error allocating IP: {str(e)}")
+                return
 
             datacenter = content.rootFolder.childEntity[0]
             vm_folder = datacenter.vmFolder
@@ -101,7 +112,7 @@ class VMManager:
             # Generate a new unique VM name
             index = 1
             new_vm_name = profile['hostname_pattern'].format(index=index)
-            while get_vm_by_name(new_vm_name, content):
+            while self.get_vm_by_name(new_vm_name, content):
                 index += 1
                 new_vm_name = profile['hostname_pattern'].format(index=index)
 
@@ -142,4 +153,3 @@ def get_vm_by_name(vm_name, content):
         if vm.name == vm_name:
             return vm
     return None
-s
