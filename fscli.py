@@ -21,12 +21,12 @@ def load_config():
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def get_manager(site, service_type, service_name):
+def get_manager(site, service_type, host_name):
     config = load_config()
     site_config = config['sites'][site]
-    service_config = next((s for s in site_config[service_type] if s['host'] == service_name), None)
+    service_config = next((s for s in site_config[service_type] if s['host'] == host_name), None)
     if not service_config:
-        raise ValueError(f"{service_type.capitalize()} service '{service_name}' not found in site '{site}'")
+        raise ValueError(f"{service_type.capitalize()} service with host '{host_name}' not found in site '{site}'")
     
     if service_type == 'hypervisors':
         if service_config['type'] == 'vmware':
