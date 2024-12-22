@@ -1,44 +1,54 @@
 import argparse
 import os
 import yaml
+import logging
 from managers.msdns_manager import DNSManager
 from managers.vmware_manager import VMManager
 from managers.purestorage_manager import StorageManager
 from managers.harvester_manager import HarvesterManager
 from managers.cloudstack_manager import CloudStackManager
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def load_profile(profile_name):
     profile_path = os.path.join("vm_profiles", f"{profile_name}.yaml")
     if not os.path.exists(profile_path):
-        raise FileNotFoundError(f"Profile {profile_name} not found at {profile_path}")
+        logger.error(f"Profile {profile_name} not found at {profile_path}")
+        return None
     with open(profile_path, 'r') as f:
         return yaml.safe_load(f)
 
 def load_config():
     config_path = os.path.join("configs", "sites.yaml")
     if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Configuration file not found at {config_path}")
+        logger.error(f"Configuration file not found at {config_path}")
+        return None
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
 def get_manager(site, service_type, host_name):
     config = load_config()
+    if not config:
+        return None
     site_config = config['sites'][site]
     service_config = next((s for s in site_config[service_type] if s['host'] == host_name), None)
     if not service_config:
-        raise ValueError(f"{service_type.capitalize()} service with host '{host_name}' not found in site '{site}'")
+        logger.error(f"{service_type.capitalize()} service with host '{host_name}' not found in site '{site}'")
+        return None
     
     if service_type == 'hypervisors':
         if service_config['type'] == 'vmware':
-            return VMManager(service_instance, profiles_path, config_path)
+            return VMManager(service_config['host'], "vm_profiles", "configs")
         elif service_config['type'] == 'harvester':
-            return HarvesterManager(config_path)
+            return HarvesterManager("configs")
         elif service_config['type'] == 'cloudstack':
-            return CloudStackManager(config_path)
+            return CloudStackManager("configs")
     elif service_type == 'storage':
-        return StorageManager(config_path)
+        return StorageManager("configs")
     elif service_type == 'dns':
-        return DNSManager(config_path)
+        return DNSManager("configs")
     return None
 
 def main():
@@ -179,7 +189,7 @@ def main():
         if args.tool == 'dns':
             dns_manager = get_manager(args.site, 'dns', args.dns_name)
             if not dns_manager:
-                print(f"DNS manager not found for site {args.site} and DNS server {args.dns_name}")
+                logger.error(f"DNS manager not found for site {args.site} and DNS server {args.dns_name}")
                 return
 
             if args.command == 'get':
@@ -194,11 +204,14 @@ def main():
         elif args.tool == 'vm':
             vm_manager = get_manager(args.site, 'hypervisors', args.hypervisor_name)
             if not vm_manager:
-                print(f"VM manager not found for site {args.site} and hypervisor {args.hypervisor_name}")
+                logger.error(f"VM manager not found for site {args.site} and hypervisor {args.hypervisor_name}")
                 return
 
             if args.command == 'create':
                 profile = load_profile(args.profile_name)
+                if not profile:
+                    logger.error(f"Profile {args.profile_name} could not be loaded")
+                    return
                 vm_manager.create_vm(profile)
             elif args.command == 'delete':
                 vm_manager.delete_vm(args.vm_name)
@@ -208,12 +221,15 @@ def main():
                 vm_manager.create_snapshot(args.vm_name)
             elif args.command == 'modify':
                 profile = load_profile(args.profile_name)
+                if not profile:
+                    logger.error(f"Profile {args.profile_name} could not be loaded")
+                    return
                 vm_manager.modify_vm(args.vm_name, profile)
 
         elif args.tool == 'storage':
             storage_manager = get_manager(args.site, 'storage', args.array_name)
             if not storage_manager:
-                print(f"Storage manager not found for site {args.site} and array {args.array_name}")
+                logger.error(f"Storage manager not found for site {args.site} and array {args.array_name}")
                 return
 
             if args.command == 'create_lun':
@@ -234,7 +250,7 @@ def main():
                 storage_manager.list_host_lun_mappings(args.array_name)
 
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}")
 
 if __name__ == '__main__':
     main()
