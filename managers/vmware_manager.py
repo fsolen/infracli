@@ -122,16 +122,19 @@ class VMManager:
             task = template_vm.Clone(folder=vm_folder, name=new_vm_name, spec=clone_spec)
             print("Cloning VM from template...")
 
+            timeout = 600  # Timeout in seconds
+            start_time = time.time()
+
             while task.info.state == vim.TaskInfo.State.running:
-                pass
+                if time.time() - start_time > timeout:
+                    print("Error: Task timed out")
+                    break
+                time.sleep(5)  # Sleep for 5 seconds before checking again
 
             if task.info.state == vim.TaskInfo.State.success:
                 print(f"VM {new_vm_name} created successfully")
             else:
                 print(f"Error creating VM: {task.info.error}")
-
-        except Exception as e:
-            print("Error creating VM:", str(e))
 
 def get_vm_by_name(vm_name, content):
     vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
@@ -139,3 +142,4 @@ def get_vm_by_name(vm_name, content):
         if vm.name == vm_name:
             return vm
     return None
+s
