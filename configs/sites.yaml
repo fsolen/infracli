@@ -29,7 +29,6 @@ sites:
         host: vault.fatihsolen.local
   ankara:
     hypervisors:
-    hypervisors:
       - type: vmware
         host: avcenter01.fatihsolen.local
       - type: vmware
