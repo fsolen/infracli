@@ -21,8 +21,10 @@ class DNSManager:
         return self.dns_servers.get(domain)
 
     def run_winrm_command(self, command, dns_server):
-        # Placeholder for running WinRM command
         # Replace with actual implementation
+        # session = winrm.Session(dns_server, auth=(self.username, self.password))
+        # result = session.run_cmd(command)
+        # return result.std_out
         print(f"Running command on {dns_server}: {command}")
         return subprocess.check_output(command, shell=True)
 
