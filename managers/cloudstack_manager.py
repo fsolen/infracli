@@ -14,21 +14,26 @@ class CloudStackManager:
         clusters = {}
         for filename in os.listdir(self.config_path):
             if filename.endswith(".yaml"):
-                with open(os.path.join(self.config_path, filename), 'r') as f:
-                    config = yaml.safe_load(f)
-                    cluster_name = os.path.splitext(filename)[0]
-                    clusters[cluster_name] = CloudStack(endpoint=config['api_url'], key=config['api_key'], secret=config['secret_key'])
-                    self.vm_count[cluster_name] = 0  # Initialize VM count for the cluster
+                try:
+                    with open(os.path.join(self.config_path, filename), 'r') as f:
+                        cluster = yaml.safe_load(f)
+                        cluster_name = os.path.splitext(filename)[0]
+                        clusters[cluster_name] = cluster
+                except Exception as e:
+                    print(f"Error loading cluster {filename}: {str(e)}")
         return clusters
 
     def allocate_ip(self, vm_profile):
         vlan_name = vm_profile.get('vlan')
         if vlan_name:
-            network_info = self.phpipam_manager.get_network_info(vlan_name)
-            return network_info
+            try:
+                network_info = self.phpipam_manager.get_network_info(vlan_name)
+                return network_info
+            except Exception as e:
+                print(f"Error allocating IP for VLAN {vlan_name}: {str(e)}")
+                raise
         else:
             raise ValueError("VLAN not specified in vm_profile")
-
     def create_vm(self, cluster_name, profile):
         cluster = self.clusters.get(cluster_name)
         if cluster:
