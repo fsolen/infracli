@@ -30,15 +30,15 @@ def get_manager(site, service_type, host_name):
     
     if service_type == 'hypervisors':
         if service_config['type'] == 'vmware':
-            return VMManager(service_config['host'])
+            return VMManager(service_instance, profiles_path, config_path)
         elif service_config['type'] == 'harvester':
-            return HarvesterManager(service_config['host'])
+            return HarvesterManager(config_path)
         elif service_config['type'] == 'cloudstack':
-            return CloudStackManager(service_config['host'])
+            return CloudStackManager(config_path)
     elif service_type == 'storage':
-        return StorageManager(service_config['host'])
+        return StorageManager(config_path)
     elif service_type == 'dns':
-        return DNSManager(service_config['host'])
+        return DNSManager(config_path)
     return None
 
 def main():
