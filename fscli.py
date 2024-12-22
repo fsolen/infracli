@@ -2,6 +2,7 @@ import argparse
 import os
 import yaml
 import logging
+from tabulate import tabulate
 from managers.msdns_manager import DNSManager
 from managers.vmware_manager import VMManager
 from managers.purestorage_manager import StorageManager
@@ -193,13 +194,32 @@ def main():
                 return
 
             if args.command == 'get':
-                dns_manager.get_dns_record(args.record_type, args.name, args.domain)
+                logger.info("Retrieving DNS record...")
+                records = dns_manager.get_dns_record(args.record_type, args.name, args.domain)
+                if records:
+                    table = tabulate(records, headers="keys", tablefmt="grid")
+                    logger.info(f"DNS records for {args.name}:\n{table}")
+                else:
+                    logger.info(f"No DNS record found for {args.name}")
+
             elif args.command == 'add':
+                logger.info("Adding DNS record...")
                 dns_manager.add_dns_record(args.record_type, args.name, args.value, args.ttl, args.domain, args.priority)
+                logger.info(f"DNS record added: {args.record_type} record for {args.name} -> {args.value} with TTL {args.ttl}")
+
             elif args.command == 'del':
+                logger.info("Deleting DNS record...")
                 dns_manager.del_dns_record(args.record_type, args.name, args.value, args.domain)
+                logger.info(f"DNS record deleted: {args.record_type} record for {args.name} -> {args.value}")
+
             elif args.command == 'list':
-                dns_manager.list_dns_records(args.domain)
+                logger.info("Listing DNS records...")
+                records = dns_manager.list_dns_records(args.domain)
+                if records:
+                    table = tabulate(records, headers="keys", tablefmt="grid")
+                    logger.info(f"DNS records for {args.domain}:\n{table}")
+                else:
+                    logger.info(f"No DNS records found for {args.domain}")
 
         elif args.tool == 'vm':
             vm_manager = get_manager(args.site, 'hypervisors', args.hypervisor_name)
@@ -212,19 +232,37 @@ def main():
                 if not profile:
                     logger.error(f"Profile {args.profile_name} could not be loaded")
                     return
-                vm_manager.create_vm(profile)
+                logger.info(f"Creating VM from profile {args.profile_name}...")
+                vm_manager.create_vm(args.site, profile)
+                logger.info(f"VM {profile['hostname_pattern'].format(index=1)} created successfully")
+
             elif args.command == 'delete':
+                logger.info(f"Deleting VM {args.vm_name}...")
                 vm_manager.delete_vm(args.vm_name)
+                logger.info(f"VM {args.vm_name} deleted successfully")
+
             elif args.command == 'list':
-                vm_manager.list_vms()
+                logger.info("Listing VMs...")
+                vms = vm_manager.list_vms()
+                if vms:
+                    table = tabulate(vms, headers=["VM Name", "vCPU", "Memory", "Total Disk Size", "Snapshot Count"], tablefmt="grid")
+                    logger.info(f"VMs in {args.site} on {args.hypervisor_name}:\n{table}")
+                else:
+                    logger.info(f"No VMs found in {args.site} on {args.hypervisor_name}")
+
             elif args.command == 'snapshot':
+                logger.info(f"Creating snapshot for VM {args.vm_name}...")
                 vm_manager.create_snapshot(args.vm_name)
+                logger.info(f"Snapshot for VM {args.vm_name} created successfully")
+
             elif args.command == 'modify':
                 profile = load_profile(args.profile_name)
                 if not profile:
                     logger.error(f"Profile {args.profile_name} could not be loaded")
                     return
+                logger.info(f"Modifying VM {args.vm_name} with profile {args.profile_name}...")
                 vm_manager.modify_vm(args.vm_name, profile)
+                logger.info(f"VM {args.vm_name} modified successfully")
 
         elif args.tool == 'storage':
             storage_manager = get_manager(args.site, 'storage', args.array_name)
@@ -234,20 +272,50 @@ def main():
 
             if args.command == 'create_lun':
                 storage_manager.create_lun(args.array_name, args.volume_name, args.size)
+                logger.info(f"LUN {args.volume_name} created successfully")
+
             elif args.command == 'create_host':
                 storage_manager.create_host(args.array_name, args.host_name, args.iqn, args.wwns)
+                logger.info(f"Host {args.host_name} created successfully")
+
             elif args.command == 'add_initiator':
                 storage_manager.add_initiator_to_host(args.array_name, args.host_name, args.initiator_name, args.initiator_type)
+                logger.info(f"Initiator {args.initiator_name} added to host {args.host_name} successfully")
+
             elif args.command == 'map_volume':
                 storage_manager.map_volume_to_host(args.array_name, args.volume_name, args.host_name)
+                logger.info(f"Volume {args.volume_name} mapped to host {args.host_name} successfully")
+
             elif args.command == 'snapshot_lun':
                 storage_manager.take_snapshot(args.array_name, args.volume_name, args.snapshot_name)
+                logger.info(f"Snapshot {args.snapshot_name} for volume {args.volume_name} created successfully")
+
             elif args.command == 'list_hosts':
-                storage_manager.list_hosts(args.array_name)
+                logger.info("Listing hosts...")
+                hosts = storage_manager.list_hosts(args.array_name)
+                if hosts:
+                    table = tabulate(hosts, headers=["Host Name", "Initiator Type", "IQN", "WWNs"], tablefmt="grid")
+                    logger.info(f"Hosts in {args.site} on {args.array_name}:\n{table}")
+                else:
+                    logger.info(f"No hosts found in {args.site} on {args.array_name}")
+
             elif args.command == 'list_luns':
-                storage_manager.list_luns(args.array_name)
+                logger.info("Listing LUNs...")
+                luns = storage_manager.list_luns(args.array_name)
+                if luns:
+                    table = tabulate(luns, headers=["LUN Name", "LUN ID", "Serial"], tablefmt="grid")
+                    logger.info(f"LUNs in {args.site} on {args.array_name}:\n{table}")
+                else:
+                    logger.info(f"No LUNs found in {args.site} on {args.array_name}")
+
             elif args.command == 'list_host_lun_mappings':
-                storage_manager.list_host_lun_mappings(args.array_name)
+                logger.info("Listing host-LUN mappings...")
+                mappings = storage_manager.list_host_lun_mappings(args.array_name)
+                if mappings:
+                    table = tabulate(mappings, headers=["Host Name", "Mapped LUNs"], tablefmt="grid")
+                    logger.info(f"Host-LUN mappings in {args.site} on {args.array_name}:\n{table}")
+                else:
+                    logger.info(f"No host-LUN mappings found in {args.site} on {args.array_name}")
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
