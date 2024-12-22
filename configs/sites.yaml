@@ -8,7 +8,7 @@ sites:
       - type: harvester # KubeVirt
         host: iharvester01.fatihsolen.local
       - type: harvester # KubeVirt
-        host: iharvester01.fatihsolen.local
+        host: iharvester02.fatihsolen.local
       - type: cloudstack
         host: icloudstack01.fatihsolen.local/client/api
       - type: cloudstack
@@ -36,7 +36,7 @@ sites:
       - type: harvester # KubeVirt
         host: aharvester01.fatihsolen.local
       - type: harvester # KubeVirt
-        host: aharvester01.fatihsolen.local
+        host: aharvester02.fatihsolen.local
       - type: cloudstack
         host: acloudstack01.fatihsolen.local/client/api
       - type: cloudstack
