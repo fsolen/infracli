@@ -1,6 +1,5 @@
 import os
 import yaml
-import requests
 from .phpipam_manager import PhpIpamManager
 
 class HarvesterManager:
@@ -13,10 +12,13 @@ class HarvesterManager:
         clusters = {}
         for filename in os.listdir(self.config_path):
             if filename.endswith(".yaml"):
-                with open(os.path.join(self.config_path, filename), 'r') as f:
-                    config = yaml.safe_load(f)
-                    cluster_name = os.path.splitext(filename)[0]
-                    clusters[cluster_name] = config
+                try:
+                    with open(os.path.join(self.config_path, filename), 'r') as f:
+                        cluster = yaml.safe_load(f)
+                        cluster_name = os.path.splitext(filename)[0]
+                        clusters[cluster_name] = cluster
+                except Exception as e:
+                    print(f"Error loading cluster {filename}: {str(e)}")
         return clusters
 
     def get_cluster_config(self, cluster_name):
@@ -25,22 +27,35 @@ class HarvesterManager:
     def allocate_ip(self, vm_profile):
         vlan_name = vm_profile.get('vlan')
         if vlan_name:
-            network_info = self.phpipam_manager.get_network_info(vlan_name)
-            return network_info
+            try:
+                network_info = self.phpipam_manager.get_network_info(vlan_name)
+                return network_info
+            except Exception as e:
+                print(f"Error allocating IP for VLAN {vlan_name}: {str(e)}")
+                raise
         else:
             raise ValueError("VLAN not specified in vm_profile")
 
-    def create_vm(self, cluster_name, profile):
+    def create_vm(self, cluster_name, profile_name):
         config = self.get_cluster_config(cluster_name)
         if not config:
             print(f"Cluster configuration for {cluster_name} not found.")
+            return
+
+        profile = self.profiles.get(profile_name)
+        if not profile:
+            print(f"Profile {profile_name} not found.")
             return
 
         api_url = config['harvester_api_url']
         token = config['harvester_api_token']
         headers = {'Authorization': f'Bearer {token}'}
 
-        network_info = self.allocate_ip(profile)
+        try:
+            network_info = self.allocate_ip(profile)
+        except Exception as e:
+            print(f"Error allocating IP: {str(e)}")
+            return
 
         # Create VM payload from profile
         payload = {
