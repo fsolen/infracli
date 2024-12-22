@@ -1,0 +1,58 @@
+sites:
+  istanbul:
+    hypervisors:
+      - type: vmware
+        host: ivcenter01.fatihsolen.local
+      - type: vmware
+        host: ivcenter02.fatihsolen.local
+      - type: harvester # KubeVirt
+        host: iharvester01.fatihsolen.local
+      - type: harvester # KubeVirt
+        host: iharvester01.fatihsolen.local
+      - type: cloudstack
+        host: icloudstack01.fatihsolen.local/client/api
+      - type: cloudstack
+        host: icloudstack02.fatihsolen.local/client/api
+    storage:
+      - type: purefa
+        host: ipurefa01.fatihsolen.local
+      - type: purefa
+        host: ipurefa02.fatihsolen.local
+    dns:
+      - type: msdns
+        host: msdns.fatihsolen.local
+    ipam:
+      - type: phpipam
+        host: iipam.fatihsolen.local
+    vault:
+      - type: openboa
+        host: vault.fatihsolen.local
+  ankara:
+    hypervisors:
+    hypervisors:
+      - type: vmware
+        host: avcenter01.fatihsolen.local
+      - type: vmware
+        host: avcenter02.fatihsolen.local
+      - type: harvester # KubeVirt
+        host: aharvester01.fatihsolen.local
+      - type: harvester # KubeVirt
+        host: aharvester01.fatihsolen.local
+      - type: cloudstack
+        host: acloudstack01.fatihsolen.local/client/api
+      - type: cloudstack
+        host: acloudstack02.fatihsolen.local/client/api
+    storage:
+      - type: purefa
+        host: apurefa01.fatihsolen.local
+      - type: purefa
+        host: apurefa02.fatihsolen.local
+    dns:
+      - type: msdns
+        host: msdns.fatihsolen.local
+    ipam:
+      - type: phpipam
+        host: aipam.fatihsolen.local
+    vault:
+      - type: openboa
+        host: vault.fatihsolen.local
