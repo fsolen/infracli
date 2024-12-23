@@ -43,18 +43,24 @@ class VMManager:
 
         return selected_host
 
-    def select_datastore(self, host):
+    def select_datastore(self, host, profile):
         datastore = None
-        max_free_space = 0
-
+        max_remaining_capacity = 0
+    
+        # Calculate total disk size from the profile
+        total_disk_size = sum(disk['size_gb'] * 1024**3 for disk in profile['disks'])  # Convert GB to bytes
+    
         for ds in host.datastore:
             summary = ds.summary
-            free_space = summary.freeSpace
-
-            if free_space > max_free_space:
-                max_free_space = free_space
-                datastore = ds
-
+            if summary.multipleHostAccess:  # Filter shared datastores
+                total_capacity = summary.capacity
+                usable_capacity = total_capacity * 0.8
+                remaining_capacity = usable_capacity - total_disk_size
+    
+                if remaining_capacity > max_remaining_capacity:
+                    max_remaining_capacity = remaining_capacity
+                    datastore = ds
+    
         return datastore
 
     def get_all_snapshots_names(self, snapshots):
