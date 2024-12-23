@@ -1,5 +1,7 @@
 import os
 import yaml
+import logging
+import time
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
@@ -10,6 +12,7 @@ class VMManager:
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
         self.phpipam_manager = PhpIpamManager(config_path)
+        self.logger = logging.getLogger(__name__)
 
     def load_profiles(self):
         profiles = {}
@@ -20,48 +23,67 @@ class VMManager:
                         profile = yaml.safe_load(f)
                         profile_name = os.path.splitext(filename)[0]
                         profiles[profile_name] = profile
+                        self.logger.info(f"Loaded profile {profile_name}")
                 except Exception as e:
-                    print(f"Error loading profile {filename}: {str(e)}")
+                    self.logger.error(f"Error loading profile {filename}: {str(e)}")
         return profiles
 
     def select_host(self):
-        content = self.service_instance.RetrieveContent()
-        hosts = content.viewManager.CreateContainerView(content.rootFolder, [vim.HostSystem], True).view
-        selected_host = None
-        min_cpu = float('inf')
-        min_memory = float('inf')
+        try:
+            content = self.service_instance.RetrieveContent()
+            hosts = content.viewManager.CreateContainerView(content.rootFolder, [vim.HostSystem], True).view
+            selected_host = None
+            min_cpu = float('inf')
+            min_memory = float('inf')
 
-        for host in hosts:
-            host_summary = host.summary
-            if host_summary.runtime.connectionState == "connected":
-                cpu_usage = host_summary.quickStats.overallCpuUsage
-                memory_usage = host_summary.quickStats.overallMemoryUsage
-                if cpu_usage < min_cpu and memory_usage < min_memory:
-                    min_cpu = cpu_usage
-                    min_memory = memory_usage
-                    selected_host = host
+            for host in hosts:
+                host_summary = host.summary
+                if host_summary.runtime.connectionState == "connected":
+                    cpu_usage = host_summary.quickStats.overallCpuUsage
+                    memory_usage = host_summary.quickStats.overallMemoryUsage
+                    if cpu_usage < min_cpu and memory_usage < min_memory:
+                        min_cpu = cpu_usage
+                        min_memory = memory_usage
+                        selected_host = host
 
-        return selected_host
+            if selected_host:
+                self.logger.info(f"Selected host: {selected_host.name}")
+            else:
+                self.logger.warning("No suitable host found")
+
+            return selected_host
+        except Exception as e:
+            self.logger.error(f"Failed to select host: {e}")
+            return None
 
     def select_datastore(self, host, profile):
-        datastore = None
-        max_remaining_capacity = 0
-    
-        # Calculate total disk size from the profile
-        total_disk_size = sum(disk['size_gb'] * 1024**3 for disk in profile['disks'])  # Convert GB to bytes
-    
-        for ds in host.datastore:
-            summary = ds.summary
-            if summary.multipleHostAccess:  # Filter shared datastores
-                total_capacity = summary.capacity
-                usable_capacity = total_capacity * 0.8
-                remaining_capacity = usable_capacity - total_disk_size
-    
-                if remaining_capacity > max_remaining_capacity:
-                    max_remaining_capacity = remaining_capacity
-                    datastore = ds
-    
-        return datastore
+        try:
+            datastore = None
+            max_remaining_capacity = 0
+
+            # Calculate total disk size from the profile
+            total_disk_size = sum(disk['size_gb'] * 1024**3 for disk in profile['disks'])  # Convert GB to bytes
+
+            for ds in host.datastore:
+                summary = ds.summary
+                if summary.multipleHostAccess:  # Filter shared datastores
+                    total_capacity = summary.capacity
+                    usable_capacity = total_capacity * 0.8
+                    remaining_capacity = usable_capacity - total_disk_size
+
+                    if remaining_capacity > max_remaining_capacity:
+                        max_remaining_capacity = remaining_capacity
+                        datastore = ds
+
+            if datastore:
+                self.logger.info(f"Selected datastore: {datastore.name}")
+            else:
+                self.logger.warning("No suitable datastore found")
+
+            return datastore
+        except Exception as e:
+            self.logger.error(f"Failed to select datastore: {e}")
+            return None
 
     def get_all_snapshots_names(self, snapshots):
         snapshot_names = []
@@ -71,6 +93,188 @@ class VMManager:
                 snapshot_names.extend(self.get_all_snapshots_names(snapshot.childSnapshotList))
         return snapshot_names
 
+    def create_vm(self, site, profile):
+        try:
+            content = self.service_instance.RetrieveContent()
+            datacenter = content.rootFolder.childEntity[0]
+            vm_folder = datacenter.vmFolder
+            resource_pool = datacenter.hostFolder.childEntity[0].resourcePool
+
+            # Select host and datastore
+            host = self.select_host()
+            datastore = self.select_datastore(host, profile)
+
+            if not host or not datastore:
+                self.logger.error("Failed to select host or datastore")
+                return
+
+            # Create VM configuration
+            vm_name = profile['hostname_pattern'].format(index=1)
+            vm_config = vim.vm.ConfigSpec(
+                name=vm_name,
+                memoryMB=profile['memory'],
+                numCPUs=profile['cpu'],
+                guestId='otherGuest',
+                version='vmx-19'  # Latest virtual hardware version for vSphere 8
+            )
+
+            # Add disks
+            for disk in profile['disks']:
+                disk_spec = vim.vm.device.VirtualDeviceSpec(
+                    operation=vim.vm.device.VirtualDeviceSpec.Operation.add,
+                    device=vim.vm.device.VirtualDisk(
+                        backing=vim.vm.device.VirtualDisk.FlatVer2BackingInfo(
+                            fileName=f"[{datastore.name}] {vm_name}/{disk['name']}.vmdk",
+                            diskMode='persistent'
+                        ),
+                        capacityInKB=disk['size_gb'] * 1024 * 1024,
+                        key=-1,
+                        unitNumber=0,
+                        controllerKey=1000
+                    )
+                )
+                vm_config.deviceChange.append(disk_spec)
+
+            # Add network interfaces
+            for network in profile['networks']:
+                nic_spec = vim.vm.device.VirtualDeviceSpec(
+                    operation=vim.vm.device.VirtualDeviceSpec.Operation.add,
+                    device=vim.vm.device.VirtualVmxnet3(
+                        backing=vim.vm.device.VirtualEthernetCard.NetworkBackingInfo(
+                            deviceName=network['name']
+                        ),
+                        key=-1,
+                        unitNumber=0,
+                        controllerKey=100
+                    )
+                )
+                vm_config.deviceChange.append(nic_spec)
+
+            # Clone the VM from the template
+            template_vm = self.get_vm_by_name(profile['template_name'], content)
+            if not template_vm:
+                self.logger.error(f"Template {profile['template_name']} not found")
+                return
+
+            clone_spec = vim.vm.CloneSpec(
+                location=vim.vm.RelocateSpec(
+                    datastore=datastore,
+                    host=host,
+                    pool=resource_pool
+                ),
+                powerOn=False,
+                template=False
+            )
+
+            task = template_vm.Clone(folder=vm_folder, name=vm_name, spec=clone_spec)
+            self.logger.info("Cloning VM from template...")
+
+            self.wait_for_task(task, "VM creation")
+
+        except Exception as e:
+            self.logger.error(f"Failed to create VM: {e}")
+
+    def delete_vm(self, vm_name):
+        try:
+            content = self.service_instance.RetrieveContent()
+            vm = self.get_vm_by_name(vm_name, content)
+            if not vm:
+                self.logger.error(f"VM {vm_name} not found")
+                return
+
+            task = vm.Destroy_Task()
+            self.logger.info(f"Deleting VM {vm_name}...")
+
+            self.wait_for_task(task, "VM deletion")
+
+        except Exception as e:
+            self.logger.error(f"Failed to delete VM: {e}")
+
+    def list_vms(self):
+        try:
+            content = self.service_instance.RetrieveContent()
+            vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
+            vms = []
+            for vm in vm_list:
+                summary = vm.summary
+                vms.append([
+                    summary.config.name,
+                    summary.config.numCpu,
+                    summary.config.memorySizeMB,
+                    summary.storage.committed / (1024**3),  # Convert bytes to GB
+                    len(self.get_all_snapshots_names(vm.snapshot.rootSnapshotList)) if vm.snapshot else 0
+                ])
+            return vms
+
+        except Exception as e:
+            self.logger.error(f"Failed to list VMs: {e}")
+            return []
+
+    def create_snapshot(self, vm_name):
+        try:
+            content = self.service_instance.RetrieveContent()
+            vm = self.get_vm_by_name(vm_name, content)
+            if not vm:
+                self.logger.error(f"VM {vm_name} not found")
+                return
+
+            task = vm.CreateSnapshot_Task(name=f"{vm_name}-snapshot", description="Snapshot created by script", memory=False, quiesce=False)
+            self.logger.info(f"Creating snapshot for VM {vm_name}...")
+
+            self.wait_for_task(task, "Snapshot creation")
+
+        except Exception as e:
+            self.logger.error(f"Failed to create snapshot: {e}")
+
+    def modify_vm(self, vm_name, profile):
+        try:
+            content = self.service_instance.RetrieveContent()
+            vm = self.get_vm_by_name(vm_name, content)
+            if not vm:
+                self.logger.error(f"VM {vm_name} not found")
+                return
+
+            vm_config = vim.vm.ConfigSpec(
+                memoryMB=profile['memory'],
+                numCPUs=profile['cpu']
+            )
+
+            # Modify disks
+            for disk in profile['disks']:
+                disk_spec = vim.vm.device.VirtualDeviceSpec(
+                    operation=vim.vm.device.VirtualDeviceSpec.Operation.edit,
+                    device=vim.vm.device.VirtualDisk(
+                        capacityInKB=disk['size_gb'] * 1024 * 1024,
+                        key=-1,
+                        unitNumber=0,
+                        controllerKey=1000
+                    )
+                )
+                vm_config.deviceChange.append(disk_spec)
+
+            # Modify network interfaces
+            for network in profile['networks']:
+                nic_spec = vim.vm.device.VirtualDeviceSpec(
+                    operation=vim.vm.device.VirtualDeviceSpec.Operation.edit,
+                    device=vim.vm.device.VirtualVmxnet3(
+                        backing=vim.vm.device.VirtualEthernetCard.NetworkBackingInfo(
+                            deviceName=network['name']
+                        ),
+                        key=-1,
+                        unitNumber=0,
+                        controllerKey=100
+                    )
+                )
+                vm_config.deviceChange.append(nic_spec)
+
+            task = vm.ReconfigVM_Task(spec=vm_config)
+            self.logger.info(f"Modifying VM {vm_name} with profile {profile['hostname_pattern']}...")
+
+            self.wait_for_task(task, "VM modification")
+
+        except Exception as e:
+            self.logger.error(f"Failed to modify VM: {e}")
+
     def get_vm_by_name(self, vm_name, content):
         vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
         for vm in vm_list:
@@ -78,84 +282,17 @@ class VMManager:
                 return vm
         return None
 
-    def create_vm(self, cluster_name, profile_name):
-        try:
-            content = self.service_instance.RetrieveContent()
-            profile = self.profiles.get(profile_name)
+    def wait_for_task(self, task, action_name):
+        timeout = 600  # Timeout in seconds
+        start_time = time.time()
 
-            if not profile:
-                raise ValueError(f"Profile {profile_name} not found")
-
-            try:
-                ip_address = self.phpipam_manager.get_next_available_ip(profile['vlan'])
-            except Exception as e:
-                print(f"Error allocating IP: {str(e)}")
+        while task.info.state == vim.TaskInfo.State.running:
+            if time.time() - start_time > timeout:
+                self.logger.error(f"Error: {action_name} task timed out")
                 return
+            time.sleep(5)  # Sleep for 5 seconds before checking again
 
-            datacenter = content.rootFolder.childEntity[0]
-            vm_folder = datacenter.vmFolder
-
-            # Find the template VM
-            template_name = profile.get('template_name', '')  # Get template name from profile
-            template_vm = None
-            template_folder = None
-            for child in vm_folder.childEntity:
-                if isinstance(child, vim.Folder) and child.name == "Templates":
-                    template_folder = child
-                    break
-
-            if not template_folder:
-                raise ValueError("Template folder not found")
-
-            for template_child in template_folder.childEntity:
-                if isinstance(template_child, vim.VirtualMachine) and template_child.name == template_name:
-                    template_vm = template_child
-                    break
-
-            if not template_vm:
-                raise ValueError(f"Template VM {template_name} not found")
-
-            # Generate a new unique VM name
-            index = 1
-            new_vm_name = profile['hostname_pattern'].format(index=index)
-            while self.get_vm_by_name(new_vm_name, content):
-                index += 1
-                new_vm_name = profile['hostname_pattern'].format(index=index)
-
-            # Select host with least CPU and memory usage
-            host = self.select_host()
-
-            # Select datastore with most available free space
-            datastore = self.select_datastore(host)
-
-            # Find the resource pool
-            resource_pool = host.parent.resourcePool
-
-            # Clone specification
-            clone_spec = vim.vm.CloneSpec(location=vim.vm.RelocateSpec(datastore=datastore, pool=resource_pool),
-                                          powerOn=False, template=False)
-
-            # Clone the VM from the template
-            task = template_vm.Clone(folder=vm_folder, name=new_vm_name, spec=clone_spec)
-            print("Cloning VM from template...")
-
-            timeout = 600  # Timeout in seconds
-            start_time = time.time()
-
-            while task.info.state == vim.TaskInfo.State.running:
-                if time.time() - start_time > timeout:
-                    print("Error: Task timed out")
-                    break
-                time.sleep(5)  # Sleep for 5 seconds before checking again
-
-            if task.info.state == vim.TaskInfo.State.success:
-                print(f"VM {new_vm_name} created successfully")
-            else:
-                print(f"Error creating VM: {task.info.error}")
-
-def get_vm_by_name(vm_name, content):
-    vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
-    for vm in vm_list:
-        if vm.name == vm_name:
-            return vm
-    return None
+        if task.info.state == vim.TaskInfo.State.success:
+            self.logger.info(f"{action_name} completed successfully")
+        else:
+            self.logger.error(f"Error during {action_name}: {task.info.error}")
