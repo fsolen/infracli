@@ -6,18 +6,17 @@ import ssl
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
-from .site_config import SiteConfig
 from .vault_manager import VaultManager
 
 class VMManager:
-    def __init__(self, site_name, profiles_path, config_path):
-        self.site_config = SiteConfig(config_path).get_site_config(site_name)
-        self.vault_manager = VaultManager(site_name, config_path)
+    def __init__(self, site_config, profiles_path):
+        self.site_config = site_config
+        self.vault_manager = VaultManager(site_config)
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.service_instance = self.connect_to_vcenter()
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
-        self.phpipam_manager = PhpIpamManager(site_name, config_path)
+        self.phpipam_manager = PhpIpamManager(site_config)
         self.logger = logging.getLogger(__name__)
 
     def connect_to_vcenter(self):
