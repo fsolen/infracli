@@ -2,13 +2,12 @@ import os
 import yaml
 from purestorage import FlashArray
 from tabulate import tabulate
-from .site_config import SiteConfig
 from .vault_manager import VaultManager
 
 class StorageManager:
-    def __init__(self, site_name, config_path):
-        self.site_config = SiteConfig(config_path).get_site_config(site_name)
-        self.vault_manager = VaultManager(site_name, config_path)
+    def __init__(self, site_config):
+        self.site_config = site_config
+        self.vault_manager = VaultManager(site_config)
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.arrays = self.load_arrays()
 
