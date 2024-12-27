@@ -5,14 +5,37 @@ import time
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class VMManager:
-    def __init__(self, service_instance, profiles_path, config_path):
-        self.service_instance = service_instance
+    def __init__(self, site_name, profiles_path, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.service_instance = self.connect_to_vcenter()
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
         self.phpipam_manager = PhpIpamManager(config_path)
         self.logger = logging.getLogger(__name__)
+
+    def connect_to_vcenter(self):
+        host = self.site_config['vcenter']['host']
+        username = self.site_config['vcenter']['username']
+        password = self.site_config['vcenter']['password']
+        context = None
+        if hasattr(ssl, "_create_unverified_context"):
+            context = ssl._create_unverified_context()
+        try:
+            return SmartConnect(host=host, user=username, pwd=password, sslContext=context)
+        except Exception as e:
+            self.logger.error(f"Unable to connect to vCenter: {str(e)}")
+            return None
+
+    def disconnect(self):
+        try:
+            if self.service_instance:
+                Disconnect(self.service_instance)
+                self.logger.info("Disconnected from vCenter")
+        except Exception as e:
+            self.logger.error(f"Error disconnecting from vCenter: {str(e)}")
 
     def load_profiles(self):
         profiles = {}
