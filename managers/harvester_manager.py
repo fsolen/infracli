@@ -86,15 +86,8 @@ class HarvesterManager:
                                 "cores": profile['cpu']
                             },
                             "devices": {
-                                "disks": [
-                                    {
-                                        "disk": {
-                                            "bus": "virtio"
-                                        },
-                                        "name": disk['name'],
-                                        "size": f"{disk['size_gb']}Gi"
-                                    } for disk in profile['disks']
-                                ]
+                                "disks": [],
+                                "interfaces": []
                             },
                             "resources": {
                                 "requests": {
@@ -102,25 +95,41 @@ class HarvesterManager:
                                 }
                             }
                         },
-                        "networks": [
-                            {
-                                "name": "default",
-                                "pod": {}
-                            }
-                        ],
-                        "interfaces": [
-                            {
-                                "name": "default",
-                                "ipAddress": network_info['ip_address'],
-                                "subnetMask": network_info['subnet_mask'],
-                                "gateway": network_info['gateway'],
-                                "dnsServers": network_info['dns_servers']
-                            }
-                        ]
+                        "volumes": [],
+                        "networks": []
                     }
                 }
             }
         }
+
+        # Add disks
+        for i, disk in enumerate(profile['disks']):
+            disk_name = f"{payload['metadata']['name']}-disk-{i}"
+            payload["spec"]["template"]["spec"]["domain"]["devices"]["disks"].append({
+                "name": disk_name,
+                "disk": {
+                    "bus": "virtio"
+                }
+            })
+            payload["spec"]["template"]["spec"]["volumes"].append({
+                "name": disk_name,
+                "persistentVolumeClaim": {
+                    "claimName": disk_name
+                }
+            })
+
+        # Add network interfaces
+        for i, network in enumerate(profile['networks']):
+            payload["spec"]["template"]["spec"]["domain"]["devices"]["interfaces"].append({
+                "name": network['name'],
+                "bridge": {}
+            })
+            payload["spec"]["template"]["spec"]["networks"].append({
+                "name": network['name'],
+                "multus": {
+                    "networkName": network['name']
+                }
+            })
 
         try:
             response = requests.post(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines", json=payload, headers=headers)
@@ -153,15 +162,39 @@ class HarvesterManager:
             # Modify VM payload from profile
             vm['spec']['template']['spec']['domain']['cpu']['cores'] = profile['cpu']
             vm['spec']['template']['spec']['domain']['resources']['requests']['memory'] = f"{profile['memory']}Mi"
-            vm['spec']['template']['spec']['domain']['devices']['disks'] = [
-                {
+            vm['spec']['template']['spec']['domain']['devices']['disks'] = []
+            vm['spec']['template']['spec']['volumes'] = []
+            vm['spec']['template']['spec']['domain']['devices']['interfaces'] = []
+            vm['spec']['template']['spec']['networks'] = []
+
+            # Modify disks
+            for i, disk in enumerate(profile['disks']):
+                disk_name = f"{vm_name}-disk-{i}"
+                vm['spec']['template']['spec']['domain']['devices']['disks'].append({
+                    "name": disk_name,
                     "disk": {
                         "bus": "virtio"
-                    },
-                    "name": disk['name'],
-                    "size": f"{disk['size_gb']}Gi"
-                } for disk in profile['disks']
-            ]
+                    }
+                })
+                vm['spec']['template']['spec']['volumes'].append({
+                    "name": disk_name,
+                    "persistentVolumeClaim": {
+                        "claimName": disk_name
+                    }
+                })
+
+            # Modify network interfaces
+            for i, network in enumerate(profile['networks']):
+                vm['spec']['template']['spec']['domain']['devices']['interfaces'].append({
+                    "name": network['name'],
+                    "bridge": {}
+                })
+                vm['spec']['template']['spec']['networks'].append({
+                    "name": network['name'],
+                    "multus": {
+                        "networkName": network['name']
+                    }
+                })
 
             response = requests.put(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines/{vm_name}", json=vm, headers=headers)
             response.raise_for_status()
