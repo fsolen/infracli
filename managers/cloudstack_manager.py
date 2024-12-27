@@ -2,11 +2,14 @@ import os
 import yaml
 from cs import CloudStack
 from .phpipam_manager import PhpIpamManager
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
+from .vault_manager import VaultManager
 
 class CloudStackManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.clusters = self.load_clusters()
         self.profiles = self.load_profiles()
         self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
