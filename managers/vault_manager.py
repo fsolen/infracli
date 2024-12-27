@@ -1,10 +1,9 @@
 import hvac
 import requests
-from .site_config import SiteConfig
 
 class VaultManager:
-    def __init__(self, site_name, config_path):
-        self.site_config = SiteConfig(config_path).get_site_config(site_name)
+    def __init__(self, site_config):
+        self.site_config = site_config
         self.vault_hosts = self.site_config['vault'][0]['hosts']
         self.client = None
         self.token = None
