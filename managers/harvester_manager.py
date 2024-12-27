@@ -2,11 +2,14 @@ import os
 import yaml
 import requests
 from .phpipam_manager import PhpIpamManager
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
+from .vault_manager import VaultManager
 
 class HarvesterManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.clusters = self.load_clusters()
         self.profiles = self.load_profiles()
         self.phpipam_manager = PhpIpamManager(config_path)
