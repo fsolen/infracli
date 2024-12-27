@@ -80,8 +80,26 @@ class CloudStackManager:
             "networkids": profile['network_ids'],
             "name": profile['hostname_pattern'].format(index=1),
             "displayname": profile['hostname_pattern'].format(index=1),
-            "ipaddress": network_info['ip_address']
+            "ipaddress": network_info['ip_address'],
+            "details": {
+                "cpuNumber": profile['cpu'],
+                "memory": profile['memory']
+            }
         }
+
+        # Add disks
+        for i, disk in enumerate(profile['disks']):
+            payload[f"disk{i+1}"] = {
+                "size": disk['size_gb'] * 1024 * 1024,  # Convert GB to MB
+                "name": disk['name']
+            }
+
+        # Add network interfaces
+        for i, network in enumerate(profile['networks']):
+            payload[f"nic{i+1}"] = {
+                "networkid": network['network_id'],
+                "name": network['name']
+            }
 
         try:
             response = cloudstack.deployVirtualMachine(**payload)
@@ -116,8 +134,26 @@ class CloudStackManager:
             payload = {
                 "id": vm['id'],
                 "serviceofferingid": profile['service_offering_id'],
-                "displayname": profile['hostname_pattern'].format(index=1)
+                "displayname": profile['hostname_pattern'].format(index=1),
+                "details": {
+                    "cpuNumber": profile['cpu'],
+                    "memory": profile['memory']
+                }
             }
+
+            # Modify disks
+            for i, disk in enumerate(profile['disks']):
+                payload[f"disk{i+1}"] = {
+                    "size": disk['size_gb'] * 1024 * 1024,  # Convert GB to MB
+                    "name": disk['name']
+                }
+
+            # Modify network interfaces
+            for i, network in enumerate(profile['networks']):
+                payload[f"nic{i+1}"] = {
+                    "networkid": network['network_id'],
+                    "name": network['name']
+                }
 
             response = cloudstack.updateVirtualMachine(**payload)
             print(f"VM {response['name']} modified successfully")
