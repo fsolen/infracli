@@ -6,11 +6,14 @@ import ssl
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
+from .vault_manager import VaultManager
 
 class VMManager:
     def __init__(self, site_name, profiles_path, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.service_instance = self.connect_to_vcenter()
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
@@ -19,8 +22,8 @@ class VMManager:
 
     def connect_to_vcenter(self):
         host = self.site_config['vcenter']['host']
-        username = self.site_config['vcenter']['username']
-        password = self.site_config['vcenter']['password']
+        username = self.credentials['username']
+        password = self.credentials['password']
         context = None
         if hasattr(ssl, "_create_unverified_context"):
             context = ssl._create_unverified_context()
