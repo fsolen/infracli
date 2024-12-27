@@ -43,9 +43,9 @@ def get_manager(site, service_type, host_name):
         if service_config['type'] == 'vmware':
             return VMManager(site_config, "vm_profiles")
         elif service_config['type'] == 'harvester':
-            return HarvesterManager(site_config)
+            return HarvesterManager(site_config, "vm_profiles")
         elif service_config['type'] == 'cloudstack':
-            return CloudStackManager(site_config)
+            return CloudStackManager(site_config, "vm_profiles")
     elif service_type == 'storage':
         return StorageManager(site_config)
     elif service_type == 'dns':
