@@ -1,14 +1,14 @@
 import requests
 import yaml
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class PhpIpamManager:
-    def __init__(self, config_path):
-        with open(config_path, 'r') as config_file:
-            config = yaml.safe_load(config_file)['phpipam']
-        self.base_url = config['base_url']
-        self.app_id = config['app_id']
-        self.username = config['username']
-        self.password = config['password']
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.base_url = self.site_config['phpipam']['base_url']
+        self.app_id = self.site_config['phpipam']['app_id']
+        self.username = self.site_config['phpipam']['username']
+        self.password = self.site_config['phpipam']['password']
         self.token = self.get_token()
 
     def get_token(self):
