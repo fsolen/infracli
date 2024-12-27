@@ -1,7 +1,7 @@
 import os
 import yaml
 import subprocess
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
 from .vault_manager import VaultManager
 
 class DNSManager:
