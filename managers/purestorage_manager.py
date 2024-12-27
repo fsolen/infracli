@@ -2,20 +2,17 @@ import os
 import yaml
 from purestorage import FlashArray
 from tabulate import tabulate
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class StorageManager:
-    def __init__(self, config_path):
-        self.config_path = config_path
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
         self.arrays = self.load_arrays()
 
     def load_arrays(self):
         arrays = {}
-        for filename in os.listdir(self.config_path):
-            if filename.endswith(".yaml"):
-                with open(os.path.join(self.config_path, filename), 'r') as f:
-                    config = yaml.safe_load(f)
-                    array_name = os.path.splitext(filename)[0]
-                    arrays[array_name] = FlashArray(config['pure_fa_api_url'], api_token=config['pure_fa_api_token'])
+        for array_name, config in self.site_config['purestorage'].items():
+            arrays[array_name] = FlashArray(config['api_url'], api_token=config['api_token'])
         return arrays
 
     def create_lun(self, array_name, volume_name, size):
