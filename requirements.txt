@@ -6,3 +6,4 @@ pywinrm
 requests==2.31.0
 cs==0.9.0
 argparse==1.4.0
+hvac
