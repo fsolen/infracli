@@ -2,42 +2,25 @@ import os
 import ssl
 import yaml
 from pyVim.connect import SmartConnect, Disconnect
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class vCenterConnector:
-    def __init__(self, config_path):
-        self.config_path = config_path
-        self.vcenters = self.load_vcenters()
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.service_instance = self.connect()
 
-    def load_vcenters(self):
-        vcenters = {}
-        for filename in os.listdir(self.config_path):
-            if filename.endswith(".yaml"):
-                with open(os.path.join(self.config_path, filename), 'r') as f:
-                    config = yaml.safe_load(f)
-                    vcenter_name = os.path.splitext(filename)[0]
-                    vcenters[vcenter_name] = config
-        return vcenters
-
-    def connect(self, vcenter_name):
-        config = self.vcenters.get(vcenter_name)
-        if not config:
-            print(f"vCenter configuration for {vcenter_name} not found.")
-            return False
-
-        host = config['host']
-        username = config['username']
-        password = config['password']
-
+    def connect(self):
+        host = self.site_config['vcenter']['host']
+        username = self.site_config['vcenter']['username']
+        password = self.site_config['vcenter']['password']
         context = None
         if hasattr(ssl, "_create_unverified_context"):
             context = ssl._create_unverified_context()
-
         try:
-            self.service_instance = SmartConnect(host=host, user=username, pwd=password, sslContext=context)
-            return True
+            return SmartConnect(host=host, user=username, pwd=password, sslContext=context)
         except Exception as e:
             print("Unable to connect to vCenter:", str(e))
-            return False
+            return None
 
     def disconnect(self):
         try:
