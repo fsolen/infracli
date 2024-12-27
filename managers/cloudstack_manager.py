@@ -2,10 +2,11 @@ import os
 import yaml
 from cs import CloudStack
 from .phpipam_manager import PhpIpamManager
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class CloudStackManager:
-    def __init__(self, config_path):
-        self.config_path = config_path
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
         self.clusters = self.load_clusters()
         self.profiles = self.load_profiles()
         self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
@@ -60,9 +61,9 @@ class CloudStackManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = cluster['api_url']
-        api_key = cluster['api_key']
-        secret_key = cluster['secret_key']
+        api_url = self.site_config['cloudstack']['api_url']
+        api_key = self.site_config['cloudstack']['api_key']
+        secret_key = self.site_config['cloudstack']['secret_key']
 
         cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
@@ -118,9 +119,9 @@ class CloudStackManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = cluster['api_url']
-        api_key = cluster['api_key']
-        secret_key = cluster['secret_key']
+        api_url = self.site_config['cloudstack']['api_url']
+        api_key = self.site_config['cloudstack']['api_key']
+        secret_key = self.site_config['cloudstack']['secret_key']
 
         cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
@@ -166,9 +167,9 @@ class CloudStackManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = cluster['api_url']
-        api_key = cluster['api_key']
-        secret_key = cluster['secret_key']
+        api_url = self.site_config['cloudstack']['api_url']
+        api_key = self.site_config['cloudstack']['api_key']
+        secret_key = self.site_config['cloudstack']['secret_key']
 
         cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
@@ -189,9 +190,9 @@ class CloudStackManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = cluster['api_url']
-        api_key = cluster['api_key']
-        secret_key = cluster['secret_key']
+        api_url = self.site_config['cloudstack']['api_url']
+        api_key = self.site_config['cloudstack']['api_key']
+        secret_key = self.site_config['cloudstack']['secret_key']
 
         cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
