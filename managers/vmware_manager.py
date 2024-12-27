@@ -119,7 +119,7 @@ class VMManager:
             )
 
             # Add disks
-            for disk in profile['disks']:
+            for i, disk in enumerate(profile['disks']):
                 disk_spec = vim.vm.device.VirtualDeviceSpec(
                     operation=vim.vm.device.VirtualDeviceSpec.Operation.add,
                     device=vim.vm.device.VirtualDisk(
@@ -129,14 +129,14 @@ class VMManager:
                         ),
                         capacityInKB=disk['size_gb'] * 1024 * 1024,
                         key=-1,
-                        unitNumber=0,
+                        unitNumber=i,
                         controllerKey=1000
                     )
                 )
                 vm_config.deviceChange.append(disk_spec)
 
             # Add network interfaces
-            for network in profile['networks']:
+            for i, network in enumerate(profile['networks']):
                 nic_spec = vim.vm.device.VirtualDeviceSpec(
                     operation=vim.vm.device.VirtualDeviceSpec.Operation.add,
                     device=vim.vm.device.VirtualVmxnet3(
@@ -144,7 +144,7 @@ class VMManager:
                             deviceName=network['name']
                         ),
                         key=-1,
-                        unitNumber=0,
+                        unitNumber=i,
                         controllerKey=100
                     )
                 )
@@ -240,20 +240,20 @@ class VMManager:
             )
 
             # Modify disks
-            for disk in profile['disks']:
+            for i, disk in enumerate(profile['disks']):
                 disk_spec = vim.vm.device.VirtualDeviceSpec(
                     operation=vim.vm.device.VirtualDeviceSpec.Operation.edit,
                     device=vim.vm.device.VirtualDisk(
                         capacityInKB=disk['size_gb'] * 1024 * 1024,
                         key=-1,
-                        unitNumber=0,
+                        unitNumber=i,
                         controllerKey=1000
                     )
                 )
                 vm_config.deviceChange.append(disk_spec)
 
             # Modify network interfaces
-            for network in profile['networks']:
+            for i, network in enumerate(profile['networks']):
                 nic_spec = vim.vm.device.VirtualDeviceSpec(
                     operation=vim.vm.device.VirtualDeviceSpec.Operation.edit,
                     device=vim.vm.device.VirtualVmxnet3(
@@ -261,7 +261,7 @@ class VMManager:
                             deviceName=network['name']
                         ),
                         key=-1,
-                        unitNumber=0,
+                        unitNumber=i,
                         controllerKey=100
                     )
                 )
