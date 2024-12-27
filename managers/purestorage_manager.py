@@ -2,7 +2,7 @@ import os
 import yaml
 from purestorage import FlashArray
 from tabulate import tabulate
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
 from .vault_manager import VaultManager
 
 class StorageManager:
