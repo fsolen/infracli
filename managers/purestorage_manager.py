@@ -3,16 +3,19 @@ import yaml
 from purestorage import FlashArray
 from tabulate import tabulate
 from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .vault_manager import VaultManager
 
 class StorageManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.arrays = self.load_arrays()
 
     def load_arrays(self):
         arrays = {}
         for array_name, config in self.site_config['purestorage'].items():
-            arrays[array_name] = FlashArray(config['api_url'], api_token=config['api_token'])
+            arrays[array_name] = FlashArray(config['api_url'], api_token=self.credentials['api_token'])
         return arrays
 
     def create_lun(self, array_name, volume_name, size):
