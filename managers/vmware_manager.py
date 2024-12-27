@@ -2,6 +2,7 @@ import os
 import yaml
 import logging
 import time
+import ssl
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
@@ -13,7 +14,7 @@ class VMManager:
         self.service_instance = self.connect_to_vcenter()
         self.profiles_path = profiles_path
         self.profiles = self.load_profiles()
-        self.phpipam_manager = PhpIpamManager(config_path)
+        self.phpipam_manager = PhpIpamManager(site_name, config_path)
         self.logger = logging.getLogger(__name__)
 
     def connect_to_vcenter(self):
@@ -75,6 +76,12 @@ class VMManager:
                 self.logger.warning("No suitable host found")
 
             return selected_host
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+            return None
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
+            return None
         except Exception as e:
             self.logger.error(f"Failed to select host: {e}")
             return None
@@ -104,6 +111,12 @@ class VMManager:
                 self.logger.warning("No suitable datastore found")
 
             return datastore
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+            return None
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
+            return None
         except Exception as e:
             self.logger.error(f"Failed to select datastore: {e}")
             return None
@@ -194,6 +207,10 @@ class VMManager:
 
             self.wait_for_task(task, "VM creation")
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
         except Exception as e:
             self.logger.error(f"Failed to create VM: {e}")
 
@@ -210,6 +227,10 @@ class VMManager:
 
             self.wait_for_task(task, "VM deletion")
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
         except Exception as e:
             self.logger.error(f"Failed to delete VM: {e}")
 
@@ -229,6 +250,12 @@ class VMManager:
                 ])
             return vms
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+            return []
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
+            return []
         except Exception as e:
             self.logger.error(f"Failed to list VMs: {e}")
             return []
@@ -246,6 +273,10 @@ class VMManager:
 
             self.wait_for_task(task, "Snapshot creation")
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
         except Exception as e:
             self.logger.error(f"Failed to create snapshot: {e}")
 
@@ -295,14 +326,21 @@ class VMManager:
 
             self.wait_for_task(task, "VM modification")
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
         except Exception as e:
             self.logger.error(f"Failed to modify VM: {e}")
 
     def get_vm_by_name(self, vm_name, content):
-        vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
-        for vm in vm_list:
-            if vm.name == vm_name:
-                return vm
+        try:
+            vm_list = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True).view
+            for vm in vm_list:
+                if vm.name == vm_name:
+                    return vm
+        except Exception as e:
+            self.logger.error(f"Error retrieving VM by name: {str(e)}")
         return None
 
     def wait_for_task(self, task, action_name):
