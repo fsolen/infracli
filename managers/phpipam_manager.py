@@ -1,14 +1,17 @@
 import requests
 import yaml
-from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .site_config import SiteConfig
+from .vault_manager import VaultManager
 
 class PhpIpamManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.base_url = self.site_config['phpipam']['base_url']
-        self.app_id = self.site_config['phpipam']['app_id']
-        self.username = self.site_config['phpipam']['username']
-        self.password = self.site_config['phpipam']['password']
+        self.app_id = self.credentials['app_id']
+        self.username = self.credentials['username']
+        self.password = self.credentials['password']
         self.token = self.get_token()
 
     def get_token(self):
