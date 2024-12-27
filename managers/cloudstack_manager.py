@@ -5,11 +5,12 @@ from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
 
 class CloudStackManager:
-    def __init__(self, site_config):
+    def __init__(self, site_config, profiles_path):
         self.site_config = site_config
         self.vault_manager = VaultManager(site_config)
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.clusters = self.load_clusters()
+        self.profiles_path = profiles_path  
         self.profiles = self.load_profiles()
         self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
         self.phpipam_manager = PhpIpamManager(site_config)
@@ -29,10 +30,10 @@ class CloudStackManager:
 
     def load_profiles(self):
         profiles = {}
-        for filename in os.listdir(self.config_path):
+        for filename in os.listdir(self.profiles_path): 
             if filename.endswith(".yaml"):
                 try:
-                    with open(os.path.join(self.config_path, filename), 'r') as f:
+                    with open(os.path.join(self.profiles_path, filename), 'r') as f:
                         profile = yaml.safe_load(f)
                         profile_name = os.path.splitext(filename)[0]
                         profiles[profile_name] = profile
