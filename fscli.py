@@ -100,33 +100,33 @@ def main():
 
     # VM Create Command
     create_parser = vm_subparsers.add_parser('create', help='Create a VM from template')
-    create_parser.add.argument('profile_name', help='Name of the profile to create VM')
-    create_parser.add.argument('site', help='Name of the site')
-    create_parser.add.argument('hypervisor_name', help='Name of the hypervisor')
+    create_parser.add_argument('profile_name', help='Name of the profile to create VM')
+    create_parser.add_argument('site', help='Name of the site')
+    create_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
 
     # VM Delete Command
     delete_parser = vm_subparsers.add_parser('delete', help='Delete VM')
-    delete_parser.add.argument('vm_name', help='Name of the VM to delete')
-    delete_parser.add.argument('site', help='Name of the site')
-    delete_parser.add.argument('hypervisor_name', help='Name of the hypervisor')
+    delete_parser.add_argument('vm_name', help='Name of the VM to delete')
+    delete_parser.add_argument('site', help='Name of the site')
+    delete_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
 
     # VM List Command
     list_parser = vm_subparsers.add_parser('list', help='List all VMs')
-    list_parser.add.argument('site', help='Name of the site')
-    list_parser.add.argument('hypervisor_name', help='Name of the hypervisor')
+    list_parser.add_argument('site', help='Name of the site')
+    list_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
 
     # VM Snapshot Command
     snapshot_parser = vm_subparsers.add_parser('snapshot', help='Create VM snapshot')
-    snapshot_parser.add.argument('vm_name', help='Name of the VM to snapshot')
-    snapshot_parser.add.argument('site', help='Name of the site')
-    snapshot_parser.add.argument('hypervisor_name', help='Name of the hypervisor')
+    snapshot_parser.add_argument('vm_name', help='Name of the VM to snapshot')
+    snapshot_parser.add_argument('site', help='Name of the site')
+    snapshot_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
 
     # VM Modify Command
     modify_parser = vm_subparsers.add.parser('modify', help='Modify existing VM')
-    modify_parser.add.argument('vm_name', help='Name of the VM to modify')
-    modify_parser.add.argument('profile_name', help='Profile name for modification')
-    modify_parser.add.argument('site', help='Name of the site')
-    modify_parser.add.argument('hypervisor_name', help='Name of the hypervisor')
+    modify_parser.add_argument('vm_name', help='Name of the VM to modify')
+    modify_parser.add_argument('profile_name', help='Profile name for modification')
+    modify_parser.add_argument('site', help='Name of the site')
+    modify_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
 
     # Storage Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
@@ -134,55 +134,55 @@ def main():
 
     # Storage Create LUN Command
     create_lun_parser = storage_subparsers.add_parser('create_lun', help='Create a LUN')
-    create_lun_parser.add.argument('site', help='Name of the site')
-    create_lun_parser.add.argument('array_name', help='Name of the storage array')
-    create_lun_parser.add.argument('volume_name', help='Name of the volume')
-    create_lun_parser.add.argument('size', help='Size of the volume')
+    create_lun_parser.add_argument('site', help='Name of the site')
+    create_lun_parser.add_argument('array_name', help='Name of the storage array')
+    create_lun_parser.add_argument('volume_name', help='Name of the volume')
+    create_lun_parser.add_argument('size', help='Size of the volume')
 
     # Storage Create Host Command
     create_host_parser = storage_subparsers.add_parser('create_host', help='Create a host')
-    create_host_parser.add.argument('site', help='Name of the site')
-    create_host_parser.add.argument('array_name', help='Name of the storage array')
-    create_host_parser.add.argument('host_name', help='Name of the host')
-    create_host_parser.add.argument('--iqn', help='IQN of the host', default=None)
-    create_host_parser.add.argument('--wwns', nargs='+', help='WWNs of the host', default=None)
+    create_host_parser.add_argument('site', help='Name of the site')
+    create_host_parser.add_argument('array_name', help='Name of the storage array')
+    create_host_parser.add_argument('host_name', help='Name of the host')
+    create_host_parser.add_argument('--iqn', help='IQN of the host', default=None)
+    create_host_parser.add_argument('--wwns', nargs='+', help='WWNs of the host', default=None)
 
     # Storage Add Initiator Command
     add_initiator_parser = storage_subparsers.add_parser('add_initiator', help='Add initiator to host')
-    add_initiator_parser.add.argument('site', help='Name of the site')
-    add_initiator_parser.add.argument('array_name', help='Name of the storage array')
-    add_initiator_parser.add.argument('host_name', help='Name of the host')
-    add_initiator_parser.add.argument('initiator_name', help='Name of the initiator')
-    add_initiator_parser.add.argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
+    add_initiator_parser.add_argument('site', help='Name of the site')
+    add_initiator_parser.add_argument('array_name', help='Name of the storage array')
+    add_initiator_parser.add_argument('host_name', help='Name of the host')
+    add_initiator_parser.add_argument('initiator_name', help='Name of the initiator')
+    add_initiator_parser.add_argument('initiator_type', choices=['iqn', 'wwn'], help='Type of the initiator')
 
     # Storage Map Volume to Host Command
     map_volume_parser = storage_subparsers.add.parser('map_volume', help='Map volume to host')
-    map_volume_parser.add.argument('site', help='Name of the site')
-    map_volume_parser.add.argument('array_name', help='Name of the storage array')
-    map_volume_parser.add.argument('volume_name', help='Name of the volume')
-    map_volume_parser.add.argument('host_name', help='Name of the host')
+    map_volume_parser.add_argument('site', help='Name of the site')
+    map_volume_parser.add_argument('array_name', help='Name of the storage array')
+    map_volume_parser.add_argument('volume_name', help='Name of the volume')
+    map_volume_parser.add_argument('host_name', help='Name of the host')
 
     # Storage Take Snapshot Command
     snapshot_lun_parser = storage_subparsers.add.parser('snapshot_lun', help='Take snapshot of a LUN')
-    snapshot_lun_parser.add.argument('site', help='Name of the site')
-    snapshot_lun_parser.add.argument('array_name', help='Name of the storage array')
-    snapshot_lun_parser.add.argument('volume_name', help='Name of the volume')
-    snapshot_lun_parser.add.argument('snapshot_name', help='Name of the snapshot')
+    snapshot_lun_parser.add_argument('site', help='Name of the site')
+    snapshot_lun_parser.add_argument('array_name', help='Name of the storage array')
+    snapshot_lun_parser.add_argument('volume_name', help='Name of the volume')
+    snapshot_lun_parser.add_argument('snapshot_name', help='Name of the snapshot')
 
     # Storage List Hosts Command
     list_hosts_parser = storage_subparsers.add.parser('list_hosts', help='List all hosts')
-    list_hosts_parser.add.argument('site', help='Name of the site')
-    list_hosts_parser.add.argument('array_name', help='Name of the storage array')
+    list_hosts_parser.add_argument('site', help='Name of the site')
+    list_hosts_parser.add_argument('array_name', help='Name of the storage array')
 
     # Storage List LUNs Command
     list_luns_parser = storage_subparsers.add.parser('list_luns', help='List all LUNs')
-    list_luns_parser.add.argument('site', help='Name of the site')
-    list_luns_parser.add.argument('array_name', help='Name of the storage array')
+    list_luns_parser.add_argument('site', help='Name of the site')
+    list_luns_parser.add_argument('array_name', help='Name of the storage array')
 
     # Storage List Host-LUN Mappings Command
     list_host_lun_mappings_parser = storage_subparsers.add.parser('list_host_lun_mappings', help='List host-LUN mappings')
-    list_host_lun_mappings_parser.add.argument('site', help='Name of the site')
-    list_host_lun_mappings_parser.add.argument('array_name', help='Name of the storage array')
+    list_host_lun_mappings_parser.add_argument('site', help='Name of the site')
+    list_host_lun_mappings_parser.add_argument('array_name', help='Name of the storage array')
 
     args = parser.parse_args()
 
