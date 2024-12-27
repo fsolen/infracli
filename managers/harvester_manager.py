@@ -2,10 +2,11 @@ import os
 import yaml
 import requests
 from .phpipam_manager import PhpIpamManager
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class HarvesterManager:
-    def __init__(self, config_path):
-        self.config_path = config_path
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
         self.clusters = self.load_clusters()
         self.profiles = self.load_profiles()
         self.phpipam_manager = PhpIpamManager(config_path)
@@ -62,8 +63,8 @@ class HarvesterManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = config['harvester_api_url']
-        token = config['harvester_api_token']
+        api_url = self.site_config['harvester']['api_url']
+        token = self.site_config['harvester']['api_token']
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
@@ -149,8 +150,8 @@ class HarvesterManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = config['harvester_api_url']
-        token = config['harvester_api_token']
+        api_url = self.site_config['harvester']['api_url']
+        token = self.site_config['harvester']['api_token']
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
@@ -208,8 +209,8 @@ class HarvesterManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = config['harvester_api_url']
-        token = config['harvester_api_token']
+        api_url = self.site_config['harvester']['api_url']
+        token = self.site_config['harvester']['api_token']
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
@@ -225,8 +226,8 @@ class HarvesterManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = config['harvester_api_url']
-        token = config['harvester_api_token']
+        api_url = self.site_config['harvester']['api_url']
+        token = self.site_config['harvester']['api_token']
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
