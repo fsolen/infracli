@@ -1,10 +1,11 @@
 import os
 import yaml
 import subprocess
+from .site_config import SiteConfig  # Import SiteConfig to load credentials
 
 class DNSManager:
-    def __init__(self, config_path):
-        self.config_path = config_path
+    def __init__(self, site_name, config_path):
+        self.site_config = SiteConfig(config_path).get_site_config(site_name)
         self.dns_servers = self.load_dns_servers()
 
     def load_dns_servers(self):
@@ -21,8 +22,10 @@ class DNSManager:
         return self.dns_servers.get(domain)
 
     def run_winrm_command(self, command, dns_server):
+        username = self.site_config['msdns']['username']
+        password = self.site_config['msdns']['password']
         # Replace with actual implementation
-        # session = winrm.Session(dns_server, auth=(self.username, self.password))
+        # session = winrm.Session(dns_server, auth=(username, password))
         # result = session.run_cmd(command)
         # return result.std_out
         print(f"Running command on {dns_server}: {command}")
