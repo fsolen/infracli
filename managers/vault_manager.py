@@ -5,13 +5,26 @@ from .site_config import SiteConfig
 class VaultManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
-        self.vault_host = self.site_config['vault'][0]['host']
-        self.vault_base_url = self.site_config['vault'][0]['base_url']
-        self.client = hvac.Client(url=f"http://{self.vault_host}")
-        self.client.token = self.get_vault_token()
+        self.vault_hosts = self.site_config['vault'][0]['hosts']
+        self.client = None
+        self.token = None
+        self.initialize_client()
 
-    def get_vault_token(self):
-        url = f"{self.vault_base_url}/v1/auth/token/create"
+    def initialize_client(self):
+        for vault_host in self.vault_hosts:
+            try:
+                self.client = hvac.Client(url=f"http://{vault_host['host']}")
+                self.token = self.get_vault_token(vault_host['base_url'])
+                self.client.token = self.token
+                break
+            except Exception as e:
+                print(f"Failed to connect to Vault host {vault_host['host']}: {str(e)}")
+                continue
+        if not self.client:
+            raise Exception("Failed to connect to any Vault host")
+
+    def get_vault_token(self, base_url):
+        url = f"{base_url}/v1/auth/token/create"
         payload = {
             "role": "your-role",
             "policies": ["default"]
