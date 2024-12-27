@@ -2,10 +2,13 @@ import os
 import yaml
 import subprocess
 from .site_config import SiteConfig  # Import SiteConfig to load credentials
+from .vault_manager import VaultManager
 
 class DNSManager:
     def __init__(self, site_name, config_path):
         self.site_config = SiteConfig(config_path).get_site_config(site_name)
+        self.vault_manager = VaultManager(site_name, config_path)
+        self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.dns_servers = self.load_dns_servers()
 
     def load_dns_servers(self):
@@ -22,8 +25,8 @@ class DNSManager:
         return self.dns_servers.get(domain)
 
     def run_winrm_command(self, command, dns_server):
-        username = self.site_config['msdns']['username']
-        password = self.site_config['msdns']['password']
+        username = self.credentials['username']
+        password = self.credentials['password']
         # Replace with actual implementation
         # session = winrm.Session(dns_server, auth=(username, password))
         # result = session.run_cmd(command)
