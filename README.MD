@@ -106,7 +106,7 @@ sites:
 
 ### VM Host Group Profiles
 
-Create VM profile files in the "vm_profiles" directory. Each file should be named after the profile and have the following format:
+Create VM profile files in the `vm_profiles` directory. Each file should be named after the profile and have the following format:
 ```yaml
 # Example profile manifest
 hostname_pattern: ipa-{index}
