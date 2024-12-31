@@ -41,32 +41,7 @@ Thank you for considering contributing to the Infracli project! This guide will 
 ```
 infracli/
 ├── configs/
-│   ├── dnsserver_configs/
-│   │   ├── domain1_com.yaml
-│   │   ├── domain2_net.yaml
-│   │   └── ...
-│   ├── hypervisor_configs/
-│   │   ├── vmware/
-│   │   │   ├── vcenter01_config.yaml
-│   │   │   ├── vcenter02_config.yaml
-│   │   │   └── ...
-│   │   ├── harvester/
-│   │   │   ├── harvester01_config.yaml
-│   │   │   ├── harvester02_config.yaml
-│   │   │   └── ...
-│   │   ├── opennebula/
-│   │   │   ├── one01_config.yaml
-│   │   │   ├── one02_config.yaml
-│   │   │   └── ...
-│   │   ├── cloudstack/
-│   │   │   ├── cloudstack01_configs.yaml
-│   │   │   ├── cloudstack02_configs.yaml
-│   │   │   └── ...
-│   ├── storage_configs/
-│   │   ├── purefa01_configs.yaml
-│   │   ├── purefa02_configs.yaml
-│   │   └── ...
-│   └── ...
+│   ├── sites.yaml
 ├── managers/
 │   ├── msdns_manager.py
 │   ├── vcenter_connector.py
@@ -89,10 +64,7 @@ infracli/
 
 - **Location**: `configs/`
 - **Purpose**: Store configurations for different services and environments.
-- **Structure**:
-  - `dnsserver_configs/`: DNS server configurations.
-  - `hypervisor_configs/`: Hypervisor configurations for VMware, Harvester, OpenNebula, and CloudStack.
-  - `storage_configs/`: Storage configurations for PureStorage arrays.
+- **Structure**: YAML files containing Infrastructure configs.
 
 ## VM Profiles
 
@@ -106,13 +78,13 @@ infracli/
 - **Purpose**: Contain classes and methods to manage different services.
 - **Files**:
   - `msdns_manager.py`: Manages DNS records.
-  - `vcenter_connector.py`: Connects to VMware vCenter.
   - `vmware_manager.py`: Manages VMware VMs.
-  - `purestorage_manager.py`: Manages PureStorage arrays.
   - `harvester_manager.py`: Manages Harvester VMs.
-  - `opennebula_manager.py`: Manages OpenNebula VMs.
   - `cloudstack_manager.py`: Manages CloudStack VMs.
-
+  - `phpipam_manager.py`: Manages phpIPAM IP Management Solution.
+  - `purestorage_manager.py`: Manages PureStorage arrays.
+  - `vault_manager.py`: Manages OpenBAO Vault.
+   
 ## Main Script
 
 - **Location**: `fscli.py`
