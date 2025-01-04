@@ -3,6 +3,7 @@ import yaml
 from cs import CloudStack
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
+from .vm_profile_manager import load_profiles
 
 class CloudStackManager:
     def __init__(self, site_config, profiles_path):
@@ -11,7 +12,7 @@ class CloudStackManager:
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.clusters = self.load_clusters()
         self.profiles_path = profiles_path  
-        self.profiles = self.load_profiles()
+        self.profiles = load_profiles(self.profiles_path)
         self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
         self.phpipam_manager = PhpIpamManager(site_config)
 
@@ -27,31 +28,6 @@ class CloudStackManager:
                 except Exception as e:
                     print(f"Error loading cluster {filename}: {str(e)}")
         return clusters
-
-    def load_profiles(self):
-        profiles = {}
-        for filename in os.listdir(self.profiles_path): 
-            if filename.endswith(".yaml"):
-                try:
-                    with open(os.path.join(self.profiles_path, filename), 'r') as f:
-                        profile = yaml.safe_load(f)
-                        profile_name = os.path.splitext(filename)[0]
-                        profiles[profile_name] = profile
-                except Exception as e:
-                    print(f"Error loading profile {filename}: {str(e)}")
-        return profiles
-
-    def allocate_ip(self, vm_profile):
-        vlan_name = vm_profile.get('vlan')
-        if vlan_name:
-            try:
-                network_info = self.phpipam_manager.get_network_info(vlan_name)
-                return network_info
-            except Exception as e:
-                print(f"Error allocating IP for VLAN {vlan_name}: {str(e)}")
-                raise
-        else:
-            raise ValueError("VLAN not specified in vm_profile")
 
     def create_vm(self, cluster_name, profile_name):
         cluster = self.clusters.get(cluster_name)
@@ -71,7 +47,7 @@ class CloudStackManager:
         cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
         try:
-            network_info = self.allocate_ip(profile)
+            network_info = self.phpipam_manager.allocate_ip(profile)
         except Exception as e:
             print(f"Error allocating IP: {str(e)}")
             return
