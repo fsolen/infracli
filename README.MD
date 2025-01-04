@@ -50,57 +50,91 @@ sites:
     hypervisors:
       - type: vmware
         host: ivcenter01.fatihsolen.local
+        vault_path: "secret/istanbul/vmware/ivcenter01"
       - type: vmware
         host: ivcenter02.fatihsolen.local
-      - type: harvester
+        vault_path: "secret/istanbul/vmware/ivcenter02"
+      - type: harvester # KubeVirt
         host: iharvester01.fatihsolen.local
-      - type: harvester
+        api_url: "https://iharvester01.fatihsolen.local"
+        vault_path: "secret/istanbul/harvester/iharvester01"
+      - type: harvester # KubeVirt
         host: iharvester02.fatihsolen.local
+        api_url: "https://iharvester02.fatihsolen.local"
+        vault_path: "secret/istanbul/harvester/iharvester02"
       - type: cloudstack
         host: icloudstack01.fatihsolen.local/client/api
+        api_url: "https://icloudstack01.fatihsolen.local/client/api"
+        vault_path: "secret/istanbul/cloudstack/icloudstack01"
       - type: cloudstack
         host: icloudstack02.fatihsolen.local/client/api
+        api_url: "https://icloudstack02.fatihsolen.local/client/api"
+        vault_path: "secret/istanbul/cloudstack/icloudstack02"
     storage:
       - type: purefa
         host: ipurefa01.fatihsolen.local
+        api_url: "https://ipurefa01.fatihsolen.local"
+        vault_path: "secret/istanbul/purefa/ipurefa01"
       - type: purefa
         host: ipurefa02.fatihsolen.local
+        api_url: "https://ipurefa02.fatihsolen.local"
+        vault_path: "secret/istanbul/purefa/ipurefa02"
     dns:
       - type: msdns
         host: msdns.fatihsolen.local
+        vault_path: "secret/istanbul/msdns"
     ipam:
       - type: phpipam
         host: iipam.fatihsolen.local
+        base_url: "https://iipam.fatihsolen.local"
+        vault_path: "secret/istanbul/phpipam"
     vault:
-      - type: openbao
+      - type: openboa
         host: vault.fatihsolen.local
   ankara:
     hypervisors:
       - type: vmware
         host: avcenter01.fatihsolen.local
+        vault_path: "secret/ankara/vmware/avcenter01"
       - type: vmware
         host: avcenter02.fatihsolen.local
-      - type: harvester
+        vault_path: "secret/ankara/vmware/avcenter02"
+      - type: harvester # KubeVirt
         host: aharvester01.fatihsolen.local
-      - type: harvester
+        api_url: "https://aharvester01.fatihsolen.local"
+        vault_path: "secret/ankara/harvester/aharvester01"
+      - type: harvester # KubeVirt
         host: aharvester02.fatihsolen.local
+        api_url: "https://aharvester02.fatihsolen.local"
+        vault_path: "secret/ankara/harvester/aharvester02"
       - type: cloudstack
         host: acloudstack01.fatihsolen.local/client/api
+        api_url: "https://acloudstack01.fatihsolen.local/client/api"
+        vault_path: "secret/ankara/cloudstack/acloudstack01"
       - type: cloudstack
         host: acloudstack02.fatihsolen.local/client/api
+        api_url: "https://acloudstack02.fatihsolen.local/client/api"
+        vault_path: "secret/ankara/cloudstack/acloudstack02"
     storage:
       - type: purefa
         host: apurefa01.fatihsolen.local
+        api_url: "https://apurefa01.fatihsolen.local"
+        vault_path: "secret/ankara/purefa/apurefa01"
       - type: purefa
         host: apurefa02.fatihsolen.local
+        api_url: "https://apurefa02.fatihsolen.local"
+        vault_path: "secret/ankara/purefa/apurefa02"
     dns:
       - type: msdns
         host: msdns.fatihsolen.local
+        vault_path: "secret/ankara/msdns"
     ipam:
       - type: phpipam
         host: aipam.fatihsolen.local
+        base_url: "https://aipam.fatihsolen.local"
+        vault_path: "secret/ankara/phpipam"
     vault:
-      - type: openbao
+      - type: openboa
         host: vault.fatihsolen.local
 ```
 
