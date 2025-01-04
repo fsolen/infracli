@@ -7,6 +7,7 @@ from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
+from .vm_profile_manager import load_profiles
 
 class VMManager:
     def __init__(self, site_config, profiles_path):
@@ -15,7 +16,7 @@ class VMManager:
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.service_instance = self.connect_to_vcenter()
         self.profiles_path = profiles_path
-        self.profiles = self.load_profiles()
+        self.profiles = load_profiles(self.profiles_path)
         self.phpipam_manager = PhpIpamManager(site_config)
         self.logger = logging.getLogger(__name__)
 
@@ -40,36 +41,22 @@ class VMManager:
         except Exception as e:
             self.logger.error(f"Error disconnecting from vCenter: {str(e)}")
 
-    def load_profiles(self):
-        profiles = {}
-        for filename in os.listdir(self.profiles_path):
-            if filename.endswith(".yaml"):
-                try:
-                    with open(os.path.join(self.profiles_path, filename), 'r') as f:
-                        profile = yaml.safe_load(f)
-                        profile_name = os.path.splitext(filename)[0]
-                        profiles[profile_name] = profile
-                        self.logger.info(f"Loaded profile {profile_name}")
-                except Exception as e:
-                    self.logger.error(f"Error loading profile {filename}: {str(e)}")
-        return profiles
-
     def select_host(self):
         try:
             content = self.service_instance.RetrieveContent()
             hosts = content.viewManager.CreateContainerView(content.rootFolder, [vim.HostSystem], True).view
             selected_host = None
-            min_cpu_usage = float('inf')
-            min_memory_usage = float('inf')
+            min_cpu = float('inf')
+            min_memory = float('inf')
 
             for host in hosts:
                 host_summary = host.summary
                 if host_summary.runtime.connectionState == "connected":
                     cpu_usage = host_summary.quickStats.overallCpuUsage
                     memory_usage = host_summary.quickStats.overallMemoryUsage
-                    if cpu_usage < min_cpu_usage and memory_usage < min_memory_usage:
-                        min_cpu_usage = cpu_usage
-                        min_memory_usage = memory_usage
+                    if cpu_usage < min_cpu and memory_usage < min_memory:
+                        min_cpu = cpu_usage
+                        min_memory = memory_usage
                         selected_host = host
 
             if selected_host:
@@ -78,38 +65,58 @@ class VMManager:
                 self.logger.warning("No suitable host found")
 
             return selected_host
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+            return None
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
+            return None
         except Exception as e:
-            self.logger.error(f"Failed to select host: {str(e)}")
+            self.logger.error(f"Failed to select host: {e}")
             return None
 
     def select_datastore(self, host, profile):
         try:
-            selected_datastore = None
+            datastore = None
             max_remaining_capacity = 0
 
             # Calculate total disk size from the profile
             total_disk_size = sum(disk['size_gb'] * 1024**3 for disk in profile['disks'])  # Convert GB to bytes
 
-            for datastore in host.datastore:
-                summary = datastore.summary
+            for ds in host.datastore:
+                summary = ds.summary
                 if summary.multipleHostAccess:  # Filter shared datastores
                     total_capacity = summary.capacity
-                    usable_capacity = total_capacity * 0.8  # Use 80% of total capacity to leave room for overhead
+                    usable_capacity = total_capacity * 0.8
                     remaining_capacity = usable_capacity - total_disk_size
 
                     if remaining_capacity > max_remaining_capacity:
                         max_remaining_capacity = remaining_capacity
-                        selected_datastore = datastore
+                        datastore = ds
 
-            if selected_datastore:
-                self.logger.info(f"Selected datastore: {selected_datastore.name}")
+            if datastore:
+                self.logger.info(f"Selected datastore: {datastore.name}")
             else:
                 self.logger.warning("No suitable datastore found")
 
-            return selected_datastore
-        except Exception as e:
-            self.logger.error(f"Failed to select datastore: {str(e)}")
+            return datastore
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
             return None
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to select datastore: {e}")
+            return None
+
+    def get_all_snapshots_names(self, snapshots):
+        snapshot_names = []
+        for snapshot in snapshots:
+            snapshot_names.append(snapshot.name)
+            if snapshot.childSnapshotList:
+                snapshot_names.extend(self.get_all_snapshots_names(snapshot.childSnapshotList))
+        return snapshot_names
 
     def create_vm(self, site, profile):
         try:
@@ -120,13 +127,10 @@ class VMManager:
 
             # Select host and datastore
             host = self.select_host()
-            if not host:
-                self.logger.error("No suitable host found for VM deployment")
-                return
-
             datastore = self.select_datastore(host, profile)
-            if not datastore:
-                self.logger.error("No suitable datastore found for VM deployment")
+
+            if not host or not datastore:
+                self.logger.error("Failed to select host or datastore")
                 return
 
             # Create VM configuration
@@ -135,8 +139,6 @@ class VMManager:
                 name=vm_name,
                 memoryMB=profile['memory'],
                 numCPUs=profile['cpu'],
-                guestId='otherGuest',
-                version='vmx-19'  # Latest virtual hardware version for vSphere 8
             )
 
             # Add disks
@@ -171,6 +173,14 @@ class VMManager:
                 )
                 vm_config.deviceChange.append(nic_spec)
 
+                # Allocate IP for each NIC
+                try:
+                    network_info = self.phpipam_manager.allocate_ip(profile)
+                    self.logger.info(f"Allocated IP {network_info['ip_address']} for NIC {network['name']}")
+                    nic_spec.device.backing.ipAddress = network_info['ip_address']
+                except Exception as e:
+                    self.logger.error(f"Error allocating IP for NIC {network['name']}: {str(e)}")
+
             # Clone the VM from the template
             template_vm = self.get_vm_by_name(profile['template_name'], content)
             if not template_vm:
@@ -192,8 +202,12 @@ class VMManager:
 
             self.wait_for_task(task, "VM creation")
 
+        except vim.fault.InvalidLogin as e:
+            self.logger.error(f"Invalid login credentials: {e}")
+        except vim.fault.NoPermission as e:
+            self.logger.error(f"No permission to access vCenter: {e}")
         except Exception as e:
-            self.logger.error(f"Failed to create VM: {str(e)}")
+            self.logger.error(f"Failed to create VM: {e}")
 
     def delete_vm(self, vm_name):
         try:
