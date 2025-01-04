@@ -3,6 +3,7 @@ import yaml
 import requests
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
+from .vm_profile_manager import load_profiles
 
 class HarvesterManager:
     def __init__(self, site_config, profiles_path):
@@ -11,7 +12,7 @@ class HarvesterManager:
         self.credentials = self.vault_manager.read_secret(self.site_config['vault_path'])
         self.clusters = self.load_clusters()
         self.profiles_path = profiles_path
-        self.profiles = self.load_profiles()
+        self.profiles = load_profiles(self.profiles_path)
         self.phpipam_manager = PhpIpamManager(site_config)
 
     def load_clusters(self):
@@ -27,33 +28,8 @@ class HarvesterManager:
                     print(f"Error loading cluster {filename}: {str(e)}")
         return clusters
 
-    def load_profiles(self):
-        profiles = {}
-        for filename in os.listdir(self.profiles_path):
-            if filename.endswith(".yaml"):
-                try:
-                    with open(os.path.join(self.profiles_path, filename), 'r') as f:
-                        profile = yaml.safe_load(f)
-                        profile_name = os.path.splitext(filename)[0]
-                        profiles[profile_name] = profile
-                except Exception as e:
-                    print(f"Error loading profile {filename}: {str(e)}")
-        return profiles
-
     def get_cluster_config(self, cluster_name):
         return self.clusters.get(cluster_name)
-
-    def allocate_ip(self, vm_profile):
-        vlan_name = vm_profile.get('vlan')
-        if vlan_name:
-            try:
-                network_info = self.phpipam_manager.get_network_info(vlan_name)
-                return network_info
-            except Exception as e:
-                print(f"Error allocating IP for VLAN {vlan_name}: {str(e)}")
-                raise
-        else:
-            raise ValueError("VLAN not specified in vm_profile")
 
     def create_vm(self, cluster_name, profile_name):
         config = self.get_cluster_config(cluster_name)
@@ -71,7 +47,7 @@ class HarvesterManager:
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
-            network_info = self.allocate_ip(profile)
+            network_info = self.phpipam_manager.allocate_ip(profile)
         except Exception as e:
             print(f"Error allocating IP: {str(e)}")
             return
