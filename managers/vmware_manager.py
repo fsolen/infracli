@@ -175,7 +175,7 @@ class VMManager:
 
                 # Allocate IP for each NIC
                 try:
-                    network_info = self.phpipam_manager.allocate_ip(profile)
+                    network_info = self.phpipam_manager.get_network_info(network['vlan'])
                     self.logger.info(f"Allocated IP {network_info['ip_address']} for NIC {network['name']}")
                     nic_spec.device.backing.ipAddress = network_info['ip_address']
                 except Exception as e:
