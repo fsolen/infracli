@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Creating fscli shell script..."
 cat <<EOL > "$SCRIPT_DIR/fscli"
 #!/bin/bash
-python "$SCRIPT_DIR/fscli.py" "\$@"
+python3 "$SCRIPT_DIR/fscli.py" "\$@"
 EOL
 
 # Make the fscli script executable
