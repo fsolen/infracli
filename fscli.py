@@ -130,7 +130,7 @@ def main():
 
     # Storage Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
-    storage_subparsers = storage_parser.add.subparsers(dest='command', required=True)
+    storage_subparsers = storage_parser.add_subparsers(dest='command', required=True)
 
     # Storage Create LUN Command
     create_lun_parser = storage_subparsers.add_parser('create_lun', help='Create a LUN')
