@@ -1,10 +1,11 @@
 import os
 import yaml
-import requests
 from tabulate import tabulate
+from kubevirt import KubeVirtClient
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
 from .vm_profile_manager import load_profiles
+
 
 class HarvesterManager:
     def __init__(self, site_config, profiles_path):
@@ -15,6 +16,7 @@ class HarvesterManager:
         self.profiles_path = profiles_path
         self.profiles = load_profiles(self.profiles_path)
         self.phpipam_manager = PhpIpamManager(site_config)
+        self.kubevirt_client = KubeVirtClient(api_url=self.site_config['harvester']['api_url'], token=self.site_config['harvester']['api_token'])
 
     def load_clusters(self):
         clusters = {}
@@ -42,10 +44,6 @@ class HarvesterManager:
         if not profile:
             print(f"Profile {profile_name} not found.")
             return
-
-        api_url = self.site_config['harvester']['api_url']
-        token = self.site_config['harvester']['api_token']
-        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
         try:
             network_info = self.phpipam_manager.allocate_ip(profile)
@@ -113,10 +111,9 @@ class HarvesterManager:
             })
 
         try:
-            response = requests.post(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines", json=payload, headers=headers)
-            response.raise_for_status()
+            self.kubevirt_client.create_virtual_machine(payload)
             print(f"VM {payload['metadata']['name']} created successfully")
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             print(f"Error creating VM: {str(e)}")
 
     def modify_vm(self, cluster_name, vm_name, profile_name):
@@ -130,15 +127,9 @@ class HarvesterManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = self.site_config['harvester']['api_url']
-        token = self.site_config['harvester']['api_token']
-        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
-
         try:
             # Retrieve the existing VM
-            response = requests.get(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines/{vm_name}", headers=headers)
-            response.raise_for_status()
-            vm = response.json()
+            vm = self.kubevirt_client.get_virtual_machine(vm_name)
 
             # Modify VM payload from profile
             vm['spec']['template']['spec']['domain']['cpu']['cores'] = profile['cpu']
@@ -177,10 +168,9 @@ class HarvesterManager:
                     }
                 })
 
-            response = requests.put(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines/{vm_name}", json=vm, headers=headers)
-            response.raise_for_status()
+            self.kubevirt_client.update_virtual_machine(vm_name, vm)
             print(f"VM {vm_name} modified successfully")
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             print(f"Error modifying VM: {str(e)}")
 
     def delete_vm(self, cluster_name, vm_name):
@@ -189,15 +179,10 @@ class HarvesterManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = self.site_config['harvester']['api_url']
-        token = self.site_config['harvester']['api_token']
-        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
-
         try:
-            response = requests.delete(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines/{vm_name}", headers=headers)
-            response.raise_for_status()
+            self.kubevirt_client.delete_virtual_machine(vm_name)
             print(f"VM {vm_name} deleted successfully")
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             print(f"Error deleting VM: {str(e)}")
 
     def list_vms(self, cluster_name):
@@ -206,14 +191,8 @@ class HarvesterManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = self.site_config['harvester']['api_url']
-        token = self.site_config['harvester']['api_token']
-        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
-
         try:
-            response = requests.get(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines", headers=headers)
-            response.raise_for_status()
-            vms = response.json().get('items', [])
+            vms = self.kubevirt_client.list_virtual_machines()
             vm_list = []
             for vm in vms:
                 vm_list.append([
@@ -224,5 +203,5 @@ class HarvesterManager:
                     vm['status']['phase']
                 ])
             print(tabulate(vm_list, headers=["VM Name", "vCPU", "Memory", "Disk Count", "State"], tablefmt="grid"))
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             print(f"Error listing VMs: {str(e)}")
