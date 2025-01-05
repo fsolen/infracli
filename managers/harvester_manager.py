@@ -1,6 +1,7 @@
 import os
 import yaml
 import requests
+from tabulate import tabulate
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
 from .vm_profile_manager import load_profiles
@@ -213,7 +214,15 @@ class HarvesterManager:
             response = requests.get(f"{api_url}/v1/harvester/kubevirt.io.virtualmachines", headers=headers)
             response.raise_for_status()
             vms = response.json().get('items', [])
+            vm_list = []
             for vm in vms:
-                print(f"VM Name: {vm['metadata']['name']}, State: {vm['status']['phase']}")
+                vm_list.append([
+                    vm['metadata']['name'],
+                    vm['spec']['template']['spec']['domain']['cpu']['cores'],
+                    vm['spec']['template']['spec']['domain']['resources']['requests']['memory'],
+                    len(vm['spec']['template']['spec']['domain']['devices']['disks']),
+                    vm['status']['phase']
+                ])
+            print(tabulate(vm_list, headers=["VM Name", "vCPU", "Memory", "Disk Count", "State"], tablefmt="grid"))
         except requests.exceptions.RequestException as e:
             print(f"Error listing VMs: {str(e)}")
