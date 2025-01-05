@@ -1,6 +1,7 @@
 import os
 import yaml
 from cs import CloudStack
+from tabulate import tabulate
 from .phpipam_manager import PhpIpamManager
 from .vault_manager import VaultManager
 from .vm_profile_manager import load_profiles
@@ -164,23 +165,31 @@ class CloudStackManager:
             print(f"Error deleting VM: {str(e)}")
 
     def list_vms(self, cluster_name):
-        cluster = self.clusters.get(cluster_name)
-        if not cluster:
-            print(f"Cluster configuration for {cluster_name} not found.")
-            return
-
-        api_url = self.site_config['cloudstack']['api_url']
-        api_key = self.site_config['cloudstack']['api_key']
-        secret_key = self.site_config['cloudstack']['secret_key']
-
-        cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
-
-        try:
-            vms = cloudstack.listVirtualMachines()
-            for vm in vms:
-                print(f"VM Name: {vm['name']}, State: {vm['state']}")
-        except Exception as e:
-            print(f"Error listing VMs: {str(e)}")
+            cluster = self.clusters.get(cluster_name)
+            if not cluster:
+                print(f"Cluster configuration for {cluster_name} not found.")
+                return
+    
+            api_url = self.site_config['cloudstack']['api_url']
+            api_key = self.site_config['cloudstack']['api_key']
+            secret_key = self.site_config['cloudstack']['secret_key']
+    
+            cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
+    
+            try:
+                vms = cloudstack.listVirtualMachines()
+                vm_list = []
+                for vm in vms:
+                    vm_list.append([
+                        vm['name'],
+                        vm['cpunumber'],
+                        vm['memory'],
+                        len(vm['nic']),
+                        vm['state']
+                    ])
+                print(tabulate(vm_list, headers=["VM Name", "vCPU", "Memory", "NIC Count", "State"], tablefmt="grid"))
+            except Exception as e:
+                print(f"Error listing VMs: {str(e)}")
 
     def get_vm_by_name(self, vm_name, cloudstack):
         try:
