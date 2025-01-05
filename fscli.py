@@ -65,6 +65,14 @@ def list_endpoints(site, service_type):
     site_config = config['sites'][site]
     return [s['host'] for s in site_config[service_type]]
 
+def list_profiles():
+    profiles_path = "vm_profiles"
+    if not os.path.exists(profiles_path):
+        logger.error(f"Profiles directory not found at {profiles_path}")
+        return None
+    profiles = [f.replace('.yaml', '') for f in os.listdir(profiles_path) if f.endswith('.yaml')]
+    return profiles
+
 def main():
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
     subparsers = parser.add_subparsers(dest='tool', required=True)
@@ -148,6 +156,9 @@ def main():
     modify_parser.add_argument('profile_name', help='Profile name for modification')
     modify_parser.add_argument('site', help='Name of the site')
     modify_parser.add_argument('hypervisor_name', help='Name of the hypervisor')
+
+    # VM List Profiles Command
+    list_profiles_parser = vm_subparsers.add_parser('list_profiles', help='List all VM profiles')
 
     # Storage Management Parser
     storage_parser = subparsers.add_parser('storage', help='Storage management commands')
@@ -257,8 +268,8 @@ def main():
                     logger.info(f"No DNS records found for {args.domain}")
 
         elif args.tool == 'vm':
-            vm_manager = get_manager(args.site, 'hypervisors', args.hypervisor_name)
-            if not vm_manager:
+            vm_manager = get_manager(args.site, 'hypervisors', args.hypervisor_name) if args.command != 'list_profiles' else None
+            if args.command != 'list_profiles' and not vm_manager:
                 logger.error(f"VM manager not found for site {args.site} and hypervisor {args.hypervisor_name}")
                 return
 
@@ -298,6 +309,13 @@ def main():
                 logger.info(f"Modifying VM {args.vm_name} with profile {args.profile_name}...")
                 vm_manager.modify_vm(args.vm_name, profile)
                 logger.info(f"VM {args.vm_name} modified successfully")
+
+            elif args.command == 'list_profiles':
+                profiles = list_profiles()
+                if profiles:
+                    logger.info(f"Available VM profiles:\n{', '.join(profiles)}")
+                else:
+                    logger.info("No VM profiles found")
 
         elif args.tool == 'storage':
             storage_manager = get_manager(args.site, 'storage', args.array_name)
