@@ -52,9 +52,30 @@ def get_manager(site, service_type, host_name):
         return DNSManager(site_config)
     return None
 
+def list_sites():
+    config = load_config()
+    if not config:
+        return None
+    return config['sites'].keys()
+
+def list_endpoints(site, service_type):
+    config = load_config()
+    if not config:
+        return None
+    site_config = config['sites'][site]
+    return [s['host'] for s in site_config[service_type]]
+
 def main():
     parser = argparse.ArgumentParser(description='Unified DNS, VM, and Storage Management Tool')
     subparsers = parser.add_subparsers(dest='tool', required=True)
+
+    # List Sites Command
+    list_sites_parser = subparsers.add_parser('list_sites', help='List all sites')
+
+    # List Endpoints Command
+    list_endpoints_parser = subparsers.add_parser('list_endpoints', help='List all endpoints for a site and service type')
+    list_endpoints_parser.add_argument('site', help='Name of the site')
+    list_endpoints_parser.add_argument('service_type', choices=['hypervisors', 'storage', 'dns'], help='Type of service')
 
     # DNS Management Parser
     dns_parser = subparsers.add_parser('dns', help='DNS management commands')
@@ -187,7 +208,21 @@ def main():
     args = parser.parse_args()
 
     try:
-        if args.tool == 'dns':
+        if args.tool == 'list_sites':
+            sites = list_sites()
+            if sites:
+                logger.info(f"Available sites:\n{', '.join(sites)}")
+            else:
+                logger.info("No sites found")
+
+        elif args.tool == 'list_endpoints':
+            endpoints = list_endpoints(args.site, args.service_type)
+            if endpoints:
+                logger.info(f"Endpoints for {args.service_type} in site {args.site}:\n{', '.join(endpoints)}")
+            else:
+                logger.info(f"No endpoints found for {args.service_type} in site {args.site}")
+
+        elif args.tool == 'dns':
             dns_manager = get_manager(args.site, 'dns', args.dns_name)
             if not dns_manager:
                 logger.error(f"DNS manager not found for site {args.site} and DNS server {args.dns_name}")
