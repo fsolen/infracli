@@ -37,7 +37,7 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 	```
 	for Windows OS
 	```sh
-	bash setup_win_fscli.bat
+	.\setup_win_fscli.bat
 	```
 
 ## Configuration
