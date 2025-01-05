@@ -16,6 +16,10 @@ class CloudStackManager:
         self.profiles = load_profiles(self.profiles_path)
         self.vm_count = {}  # Dictionary to keep track of VM counts for each cluster
         self.phpipam_manager = PhpIpamManager(site_config)
+        api_url = self.site_config['cloudstack']['api_url']
+        api_key = self.site_config['cloudstack']['api_key']
+        secret_key = self.site_config['cloudstack']['secret_key']
+        self.cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
     def load_clusters(self):
         clusters = {}
@@ -40,12 +44,6 @@ class CloudStackManager:
         if not profile:
             print(f"Profile {profile_name} not found.")
             return
-
-        api_url = self.site_config['cloudstack']['api_url']
-        api_key = self.site_config['cloudstack']['api_key']
-        secret_key = self.site_config['cloudstack']['secret_key']
-
-        cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
 
         try:
             network_info = self.phpipam_manager.allocate_ip(profile)
@@ -83,7 +81,7 @@ class CloudStackManager:
             }
 
         try:
-            response = cloudstack.deployVirtualMachine(**payload)
+            response = self.cloudstack.deployVirtualMachine(**payload)
             print(f"VM {response['name']} created successfully")
         except Exception as e:
             print(f"Error creating VM: {str(e)}")
@@ -99,14 +97,8 @@ class CloudStackManager:
             print(f"Profile {profile_name} not found.")
             return
 
-        api_url = self.site_config['cloudstack']['api_url']
-        api_key = self.site_config['cloudstack']['api_key']
-        secret_key = self.site_config['cloudstack']['secret_key']
-
-        cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
-
         try:
-            vm = self.get_vm_by_name(vm_name, cloudstack)
+            vm = self.get_vm_by_name(vm_name)
             if not vm:
                 print(f"VM {vm_name} not found.")
                 return
@@ -136,7 +128,7 @@ class CloudStackManager:
                     "name": network['name']
                 }
 
-            response = cloudstack.updateVirtualMachine(**payload)
+            response = self.cloudstack.updateVirtualMachine(**payload)
             print(f"VM {response['name']} modified successfully")
         except Exception as e:
             print(f"Error modifying VM: {str(e)}")
@@ -147,53 +139,41 @@ class CloudStackManager:
             print(f"Cluster configuration for {cluster_name} not found.")
             return
 
-        api_url = self.site_config['cloudstack']['api_url']
-        api_key = self.site_config['cloudstack']['api_key']
-        secret_key = self.site_config['cloudstack']['secret_key']
-
-        cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
-
         try:
-            vm = self.get_vm_by_name(vm_name, cloudstack)
+            vm = self.get_vm_by_name(vm_name)
             if not vm:
                 print(f"VM {vm_name} not found.")
                 return
 
-            response = cloudstack.destroyVirtualMachine(id=vm['id'])
+            response = self.cloudstack.destroyVirtualMachine(id=vm['id'])
             print(f"VM {vm_name} deleted successfully")
         except Exception as e:
             print(f"Error deleting VM: {str(e)}")
 
     def list_vms(self, cluster_name):
-            cluster = self.clusters.get(cluster_name)
-            if not cluster:
-                print(f"Cluster configuration for {cluster_name} not found.")
-                return
-    
-            api_url = self.site_config['cloudstack']['api_url']
-            api_key = self.site_config['cloudstack']['api_key']
-            secret_key = self.site_config['cloudstack']['secret_key']
-    
-            cloudstack = CloudStack(endpoint=api_url, key=api_key, secret=secret_key)
-    
-            try:
-                vms = cloudstack.listVirtualMachines()
-                vm_list = []
-                for vm in vms:
-                    vm_list.append([
-                        vm['name'],
-                        vm['cpunumber'],
-                        vm['memory'],
-                        len(vm['nic']),
-                        vm['state']
-                    ])
-                print(tabulate(vm_list, headers=["VM Name", "vCPU", "Memory", "NIC Count", "State"], tablefmt="grid"))
-            except Exception as e:
-                print(f"Error listing VMs: {str(e)}")
+        cluster = self.clusters.get(cluster_name)
+        if not cluster:
+            print(f"Cluster configuration for {cluster_name} not found.")
+            return
 
-    def get_vm_by_name(self, vm_name, cloudstack):
         try:
-            vms = cloudstack.listVirtualMachines()
+            vms = self.cloudstack.listVirtualMachines()
+            vm_list = []
+            for vm in vms:
+                vm_list.append([
+                    vm['name'],
+                    vm['cpunumber'],
+                    vm['memory'],
+                    len(vm['nic']),
+                    vm['state']
+                ])
+            print(tabulate(vm_list, headers=["VM Name", "vCPU", "Memory", "NIC Count", "State"], tablefmt="grid"))
+        except Exception as e:
+            print(f"Error listing VMs: {str(e)}")
+
+    def get_vm_by_name(self, vm_name):
+        try:
+            vms = self.cloudstack.listVirtualMachines()
             for vm in vms:
                 if vm['name'] == vm_name:
                     return vm
