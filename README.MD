@@ -8,12 +8,7 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 * Added PHPIPAM integration for getting next available IP, Subnet, Route and DNS information.
 * Openshift Virtualization (Kubevirt) (Harvester HCI works well but Openshift Virtualization not tested yet)
 * Apache Cloud Stack support added (Not fully tested)
-
-## Planned
-* Vault integration to secure authentication tokens
-
-## Not Planned
-* Proxmox support
+* OpenBAO integration done but needs optimization.
 
 ##  Do not use in production yet! 
 
@@ -35,9 +30,14 @@ InfraCLI is a unified command-line tool for managing Microsoft DNS Server record
 	python fscli.py --help
 	```
 
-4. Shorten Command (Optional)
+4. Shorten Commands (Optional)
+	for Linux Distros 
 	```sh
-	bash setup_fscli.sh
+	bash setup_linux_fscli.sh
+	```
+	for Windows OS
+	```sh
+	bash setup_win_fscli.bat
 	```
 
 ## Configuration
