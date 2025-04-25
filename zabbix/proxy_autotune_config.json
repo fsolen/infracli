@@ -1,0 +1,24 @@
+# This file should placed to path : /etc/zabbix/proxy_autotune_config.json
+
+{
+  "zabbix_get_host": "127.0.0.1",
+  "config_path": "/etc/zabbix/zabbix_proxy.conf",
+  "backup_path": "/etc/zabbix/zabbix_proxy.conf.bak",
+  "threshold": 85,
+  "restart_command": "systemctl restart zabbix-proxy",
+  "log_file": "/var/log/zabbix_tune.log",
+  "max_total_memory_mb": 14336,
+  "parameters": {
+    "poller": {"config_key": "StartPollers", "step": 10, "max": 200},
+    "unreachable poller": {"config_key": "StartPollersUnreachable", "step": 5, "max": 100},
+    "snmp poller": {"config_key": "StartSNMPPollers", "step": 10, "max": 150},
+    "lld processor": {"config_key": "StartLLDProcessors", "step": 5, "max": 50},
+    "preprocessor": {"config_key": "StartPreprocessors", "step": 5, "max": 50}
+  },
+  "memory_parameters": {
+    "CacheSize": {"step": 256, "max": 4096},
+    "HistoryCacheSize": {"step": 128, "max": 1024},
+    "TrendCacheSize": {"step": 128, "max": 1024},
+    "ValueCacheSize": {"step": 128, "max": 2048}
+  }
+}
