@@ -82,7 +82,7 @@ def update_memory_parameters(config_path, memory_params, current_config, log_fil
     return updated
 
 def main():
-    with open("/etc/zabbix/zabbix_tune_config.json") as f:
+    with open("/etc/zabbix/proxy_autotune_config.json") as f:
         cfg = json.load(f)
 
     config_path = cfg["config_path"]
